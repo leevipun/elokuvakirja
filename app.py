@@ -13,7 +13,6 @@ def index():
 @app.route('/register', methods=["GET", "POST"])
 def register():
     if request.method == "GET":
-        get_flashed_messages()
         return render_template('register.html')
     else:
         username = request.form.get("username", "").strip()
