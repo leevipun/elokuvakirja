@@ -45,7 +45,7 @@ def add_movie(user_id, movie):
         movie["title"],
         movie["year"] if movie["year"] else None,
         movie["duration"] if movie["duration"] else None,
-        movie.get("genre") if movie.get("genre") else None,
+        movie.get("category_id") if movie.get("category_id") else None,
         movie.get("platform") if movie.get("platform") else None,
         movie.get("director") if movie.get("director") else None,
         movie["watch_date"] if movie["watch_date"] else None,

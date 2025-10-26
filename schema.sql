@@ -4,12 +4,17 @@ CREATE TABLE users (
   password_hash TEXT NOT NULL
 );
 
+CREATE TABLE categories (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT UNIQUE NOT NULL
+);
+
 CREATE TABLE movies (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   title TEXT NOT NULL,
   year INTEGER,
   duration INTEGER,
-  category TEXT,
+  category INTEGER REFERENCES categories(id),
   streaming_platform TEXT,
   director TEXT,
   watch_date DATE,

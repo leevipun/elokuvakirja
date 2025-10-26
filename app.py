@@ -1,12 +1,14 @@
 from flask import Flask, render_template, request, flash, redirect, session, jsonify, get_flashed_messages
 import sqlite3
 from werkzeug.security import check_password_hash
+from datetime import datetime
 
 app = Flask(__name__, static_url_path='/static')
 app.secret_key = 'your_secret_key'
 
 import users
 import movies
+import categories
 
 @app.route('/')
 def index():
@@ -79,15 +81,42 @@ def add():
         return redirect("/login")
         
     if request.method == "GET":
-        return render_template("add.html")
+        # Load existing categories for the form
+        existing_categories = categories.get_categories() or []
+        return render_template("add.html", categories=existing_categories, current_year=datetime.now().year)
     
     # Handle POST request to add movie
+    title = request.form.get("title", "").strip()
+    if not title:
+        flash("Movie title is required", "error")
+        existing_categories = categories.get_categories() or []
+        return render_template("add.html", categories=existing_categories, current_year=datetime.now().year)
+    
+    # Handle category selection or creation
+    category_id = None
+    selected_category = request.form.get("category")
+    new_category = request.form.get("new_category", "").strip()
+    
+    if new_category:
+        # Create new category
+        try:
+            category_id = categories.add_category(new_category)
+        except sqlite3.IntegrityError:
+            # Category already exists, find it
+            existing_categories = categories.get_categories()
+            for cat in existing_categories:
+                if cat['name'].lower() == new_category.lower():
+                    category_id = cat['id']
+                    break
+    elif selected_category and selected_category != "":
+        category_id = int(selected_category)
+    
     movie_data = {
-        "title": request.form.get("title", "").strip(),
+        "title": title,
         "year": request.form.get("year") or None,
         "duration": request.form.get("duration") or None,
         "director": request.form.get("director", "").strip() or None,
-        "genre": request.form.get("genre") or None,
+        "category_id": category_id,
         "watch_date": request.form.get("watchDate") or None,
         "rating": request.form.get("rating") or None,
         "watched_with": request.form.get("watchedWith", "").strip() or None,
@@ -97,17 +126,14 @@ def add():
         "rewatchable": bool(request.form.get("rewatchable"))
     }
     
-    if not movie_data["title"]:
-        flash("Movie title is required", "error")
-        return render_template("add.html")
-    
     try:
         movies.add_movie(user["id"], movie_data)
         flash("Movie added successfully!", "success")
+        return redirect("/")
     except Exception as e:
         flash(f"Error adding movie: {str(e)}", "error")
-    
-    return redirect("/")
+        existing_categories = categories.get_categories() or []
+        return render_template("add.html", categories=existing_categories, current_year=datetime.now().year)
 
 
 if __name__ == '__main__':
