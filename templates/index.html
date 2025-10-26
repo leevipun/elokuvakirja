@@ -1,23 +1,123 @@
 <!DOCTYPE html>
 <html lang="en">
-    <head>
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>Movie Mania</title>
-        <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}" />
-    </head>
-    <body>
 
-        <nav class="navbar">
-            <a href="/register" class="navbutton active">Register</a>
-            <a href="/login" class="navbutton">Login</a>
-        </nav>
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Movie Mania</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}" />
+</head>
 
+<body>
+    <nav class="navbar">
+        <a href="/" class="navbutton active">All Movies</a>
+        {% if session.username %}
+        <a href="/add" class="navbutton">Add Movie</a>
+        {% endif %}
+        <a href="/search" class="navbutton">Search</a>
+        {% if session.username %}
+        <a href="/logout" class="navbutton">Logout</a>
+        {% else %}
+        <a href="/login" class="navbutton">Login</a>
+        {% endif %}
+    </nav>
+
+    <header>
+        <h1>Welcome to Movie Mania</h1>
+        <p>Your personal movie tracking companion</p>
+    </header>
+
+    <main>
+        {% if session.username and movies %}
         <header>
-            <h1>Welcome to Movie Mania</h1>
-            <p>Your personal movie tracking companion</p>
+            <h1>My Movie Collection 🎬</h1>
+            <p>{{ movies|length }} movies in your personal library</p>
         </header>
 
+        <div class="movies-overview-grid">
+            {% for movie in movies %}
+            <div class="movie-overview-card" onclick="window.location.href='/movie/{{ movie.id }}'">
+                <div class="movie-poster-mini">🎬</div>
 
-    </body>
+                <div class="movie-overview-info">
+                    <h3>{{ movie.title }}</h3>
+
+                    <div class="movie-overview-meta">
+                        {% if movie.year %}
+                        <span class="meta-item year">{{ movie.year }}</span>
+                        {% endif %} {% if movie.genre %}
+                        <span class="meta-item genre">{{ movie.genre.title() }}</span>
+                        {% endif %}
+                    </div>
+
+                    {% if movie.rating %}
+                    <div class="rating-mini">
+                        <span class="rating-stars">
+                            {% for i in range(1, 6) %} {% if i <= ((movie.rating / 2) | int) %} ⭐ {% elif
+                                i==(((movie.rating / 2) | int) + 1) and ((movie.rating / 2) % 1)>= 0.5 %} ⭐ {% else %} ☆
+                                {% endif %} {% endfor %}
+                        </span>
+                        <span class="rating-value">{{ movie.rating }}/10</span>
+                    </div>
+                    {% endif %}
+
+                    <div class="movie-quick-badges">
+                        {% if movie.is_favorite or movie.favorite %}
+                        <span class="quick-badge favorite">💖</span>
+                        {% endif %} {% if movie.rewatchable %}
+                        <span class="quick-badge rewatchable">🔄</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        {% elif session.username %}
+        <header>
+            <h1>Your Movie Journey Starts Here! 🌟</h1>
+            <p>Ready to track your favorite films?</p>
+        </header>
+
+        <div class="empty-movie-state">
+            <div class="empty-illustration">🎭</div>
+            <h3>No movies yet!</h3>
+            <p>Start building your personal movie collection by adding your first film.</p>
+            <a href="/add" class="btn-primary">Add Your First Movie</a>
+        </div>
+
+        {% else %}
+        <div class="welcome-content">
+            <div class="feature-cards">
+                <div class="feature-card">
+                    <h3>📚 Track Movies</h3>
+                    <p>
+                        Keep a record of all the movies you've watched with detailed information and personal
+                        ratings.
+                    </p>
+                </div>
+                <div class="feature-card">
+                    <h3>⭐ Rate & Review</h3>
+                    <p>Rate your movies and write reviews to remember what you thought about each film.</p>
+                </div>
+                <div class="feature-card">
+                    <h3>🔍 Search & Discover</h3>
+                    <p>Easily find movies in your collection and discover new films to watch.</p>
+                </div>
+            </div>
+
+            <div class="quick-actions">
+                <h3>Get Started</h3>
+                <div class="action-buttons">
+                    {% if session.username %}
+                    <a href="/add" class="btn-primary">Add Your First Movie</a>
+                    {% endif %}
+                    <a href="/register" class="btn-secondary">Create Account</a>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </main>
+</body>
+
 </html>
