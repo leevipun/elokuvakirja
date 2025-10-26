@@ -109,7 +109,9 @@
             <div class="quick-actions">
                 <h3>Get Started</h3>
                 <div class="action-buttons">
+                    {% if session.username %}
                     <a href="/add" class="btn-primary">Add Your First Movie</a>
+                    {% endif %}
                     <a href="/register" class="btn-secondary">Create Account</a>
                 </div>
             </div>
