@@ -20,7 +20,6 @@ def login():
     username = request.form.get("username", "").strip()
     password = request.form.get("password", "")
 
-    print(f"Attempting login for user: {username}")
 
     if not username or not password:
         flash("Please enter both username and password")
