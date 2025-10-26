@@ -10,13 +10,11 @@
     <body>
         <nav class="navbar">
             <a href="/" class="navbutton">All Movies</a>
+            <a href="/add" class="navbutton active">Add Movie</a>
             {% if session.username %}
-            <a href="/add" class="navbutton">Add Movie</a>
-            <a href="/favorites" class="navbutton">Favorites</a>
             <a href="/logout" class="navbutton">Logout</a>
             {% else %}
-            <a href="/login" class="navbutton active">Login</a>
-            <a href="/register" class="navbutton">Register</a>
+            <a href="/login" class="navbutton">Login</a>
             {% endif %}
         </nav>
 

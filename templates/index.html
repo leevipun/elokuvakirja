@@ -9,8 +9,13 @@
     <body>
 
         <nav class="navbar">
-            <a href="/register" class="navbutton active">Register</a>
+            <a href="/" class="navbutton">All Movies</a>
+            <a href="/add" class="navbutton active">Add Movie</a>
+            {% if session.username %}
+            <a href="/logout" class="navbutton">Logout</a>
+            {% else %}
             <a href="/login" class="navbutton">Login</a>
+            {% endif %}
         </nav>
 
         <header>
