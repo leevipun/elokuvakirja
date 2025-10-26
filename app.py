@@ -10,7 +10,12 @@ import movies
 
 @app.route('/')
 def index():
-    return render_template('index.html')
+    user_movies = []
+    if "username" in session:
+        user = users.get_user(session["username"])
+        if user:
+            user_movies = movies.get_movies()
+    return render_template('index.html', movies=user_movies)
 
 @app.route('/login', methods=["GET", "POST"])
 def login():
