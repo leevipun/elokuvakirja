@@ -3,6 +3,7 @@ import sqlite3
 from werkzeug.security import check_password_hash
 
 app = Flask(__name__, static_url_path='/static')
+app.secret_key = 'your_secret_key'
 
 import users
 
@@ -18,6 +19,8 @@ def login():
     
     username = request.form.get("username", "").strip()
     password = request.form.get("password", "")
+
+    print(f"Attempting login for user: {username}")
 
     if not username or not password:
         flash("Please enter both username and password")
@@ -60,7 +63,5 @@ def register():
         except sqlite3.IntegrityError:
             flash("Username already exists")
             return redirect("/register")
-        
 if __name__ == '__main__':
-    app.secret_key = 'your_secret_key'
     app.run(debug=True)
