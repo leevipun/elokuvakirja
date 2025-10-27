@@ -118,7 +118,7 @@ def add():
         category_id = int(selected_category)
 
     streaming_platform_id = None
-    selected_platform = request.form.get("platform")
+    selected_platform = request.form.get("streaming_platform")
     new_platform = request.form.get("new_platform", "").strip()
 
     if new_platform:
