@@ -14,15 +14,6 @@ def get_movie_platforms(movie_id):
     results = db.query(sql, [movie_id])
     return results if results else []
 
-def get_platform_movies(platform_id):
-    """Hae alustan kaikki elokuvat"""
-    sql = """SELECT m.id, m.title, m.year, m.rating
-             FROM movies m
-             JOIN platform_movies pm ON m.id = pm.movie_id
-             WHERE pm.platform_id = ?"""
-    results = db.query(sql, [platform_id])
-    return results if results else []
-
 def add_platform(platform_name):
     """Lisää uusi alusta"""
     sql = "INSERT INTO streaming_platforms (name) VALUES (?)"
