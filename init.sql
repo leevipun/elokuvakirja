@@ -17,3 +17,13 @@ INSERT INTO streaming_platforms (name) VALUES
 ('HBO Max'),
 ('Apple TV+'),
 ('Paramount+');
+
+DELETE FROM directors;
+INSERT INTO directors (name) VALUES
+('Steven Spielberg'),
+('Martin Scorsese'),
+('Christopher Nolan'),
+('Quentin Tarantino'),
+('James Cameron'),
+('Ridley Scott'),
+('Peter Jackson');

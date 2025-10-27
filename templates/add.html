@@ -60,7 +60,20 @@
 
                     <div class="form-group">
                         <label for="director">Director</label>
-                        <input type="text" id="director" name="director" placeholder="e.g. Frank Darabont" />
+                        <select id="director" name="director">
+                            <option value="">Select Existing Director</option>
+                            {% for dir in directors %}
+                            <option value="{{ dir.id }}">{{ dir.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="new_director">Or Add New Director</label>
+                        <input type="text" id="new_director" name="new_director"
+                            placeholder="Enter new director name (will override selection above)" />
+                        <small style="color: #666; font-size: 0.9em;">Note: If you enter a new director name, it will be used instead of the
+                            selection above.</small>
                     </div>
 
                     <div class="form-group">

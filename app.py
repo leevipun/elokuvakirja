@@ -10,6 +10,7 @@ import users
 import movies
 import categories
 import platforms
+import directors
 
 @app.route('/')
 def index():
@@ -85,7 +86,8 @@ def add():
         # Load existing categories for the form
         existing_categories = categories.get_categories() or []
         existing_platforms = platforms.get_platforms() or []
-        return render_template("add.html", categories=existing_categories, platforms=existing_platforms, current_year=datetime.now().year)
+        existing_directors = directors.get_directors() or []
+        return render_template("add.html", categories=existing_categories, directors=existing_directors, platforms=existing_platforms, current_year=datetime.now().year)
     
     # Handle POST request to add movie
     title = request.form.get("title", "").strip()
@@ -93,7 +95,8 @@ def add():
         flash("Movie title is required", "error")
         existing_categories = categories.get_categories() or []
         existing_platforms = platforms.get_platforms() or []
-        return render_template("add.html", categories=existing_categories, platforms=existing_platforms, current_year=datetime.now().year)
+        existing_directors = directors.get_directors() or []
+        return render_template("add.html", categories=existing_categories, directors=existing_directors, platforms=existing_platforms, current_year=datetime.now().year)
     
     # Handle category selection or creation
     category_id = None
@@ -131,18 +134,36 @@ def add():
                     break
     elif selected_platform and selected_platform != "":
         streaming_platform_id = int(selected_platform)
+
+
+    director_id = None
+    selected_director = request.form.get("director")
+    new_director = request.form.get("new_director", "").strip()
+
+    if new_director:
+
+        try:
+            director_id = directors.add_director(new_director)
+        except sqlite3.IntegrityError:
+
+            existing_directors = directors.get_directors()
+            for director in existing_directors:
+                if director['name'].lower() == new_director.lower():
+                    director_id = director['id']
+                    break
+    elif selected_director and selected_director != "":
+        director_id = int(selected_director)
     
     movie_data = {
         "title": title,
         "year": request.form.get("year") or None,
         "duration": request.form.get("duration") or None,
-        "director": request.form.get("director", "").strip() or None,
+        "director_id": director_id,
         "category_id": category_id,
         "streaming_platform_id": streaming_platform_id,
         "watch_date": request.form.get("watchDate") or None,
         "rating": request.form.get("rating") or None,
         "watched_with": request.form.get("watchedWith", "").strip() or None,
-        "platform": request.form.get("platform") or None,
         "review": request.form.get("review", "").strip() or None,
         "favorite": bool(request.form.get("favorite")),
         "rewatchable": bool(request.form.get("rewatchable"))

@@ -16,6 +16,12 @@ CREATE TABLE streaming_platforms (
   UNIQUE(name)
 );
 
+CREATE TABLE directors (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT UNIQUE NOT NULL,
+  UNIQUE(name)
+);
+
 CREATE TABLE movies (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   title TEXT NOT NULL,
@@ -23,7 +29,7 @@ CREATE TABLE movies (
   duration INTEGER,
   category_id INTEGER REFERENCES categories(id),
   streaming_platform_id INTEGER REFERENCES streaming_platforms(id),
-  director TEXT,
+  director_id INTEGER REFERENCES directors(id),
   watch_date DATE,
   rating DECIMAL(3,1) CHECK (rating BETWEEN 1 AND 10),
   watched_with TEXT,
