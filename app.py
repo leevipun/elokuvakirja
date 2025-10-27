@@ -9,6 +9,7 @@ app.secret_key = 'your_secret_key'
 import users
 import movies
 import categories
+import platforms
 
 @app.route('/')
 def index():
@@ -83,14 +84,16 @@ def add():
     if request.method == "GET":
         # Load existing categories for the form
         existing_categories = categories.get_categories() or []
-        return render_template("add.html", categories=existing_categories, current_year=datetime.now().year)
+        existing_platforms = platforms.get_platforms() or []
+        return render_template("add.html", categories=existing_categories, platforms=existing_platforms, current_year=datetime.now().year)
     
     # Handle POST request to add movie
     title = request.form.get("title", "").strip()
     if not title:
         flash("Movie title is required", "error")
         existing_categories = categories.get_categories() or []
-        return render_template("add.html", categories=existing_categories, current_year=datetime.now().year)
+        existing_platforms = platforms.get_platforms() or []
+        return render_template("add.html", categories=existing_categories, platforms=existing_platforms, current_year=datetime.now().year)
     
     # Handle category selection or creation
     category_id = None
@@ -110,6 +113,24 @@ def add():
                     break
     elif selected_category and selected_category != "":
         category_id = int(selected_category)
+
+    streaming_platform_id = None
+    selected_platform = request.form.get("platform")
+    new_platform = request.form.get("new_platform", "").strip()
+
+    if new_platform:
+
+        try:
+            streaming_platform_id = platforms.add_platform(new_platform)
+        except sqlite3.IntegrityError:
+
+            existing_platforms = platforms.get_platforms()
+            for platform in existing_platforms:
+                if platform['name'].lower() == new_platform.lower():
+                    streaming_platform_id = platform['id']
+                    break
+    elif selected_platform and selected_platform != "":
+        streaming_platform_id = int(selected_platform)
     
     movie_data = {
         "title": title,
@@ -117,6 +138,7 @@ def add():
         "duration": request.form.get("duration") or None,
         "director": request.form.get("director", "").strip() or None,
         "category_id": category_id,
+        "streaming_platform_id": streaming_platform_id,
         "watch_date": request.form.get("watchDate") or None,
         "rating": request.form.get("rating") or None,
         "watched_with": request.form.get("watchedWith", "").strip() or None,
