@@ -1,9 +1,10 @@
-from flask import Flask, render_template, request, flash, redirect, session, jsonify, get_flashed_messages
+from flask import Flask, render_template, request, flash, redirect, session, get_flashed_messages, abort
 import sqlite3
 from werkzeug.security import check_password_hash
 from datetime import datetime
 import os
 from dotenv import load_dotenv
+import secrets
 
 # Load environment variables from .env file
 load_dotenv()
@@ -19,12 +20,13 @@ import directors
 
 @app.route('/')
 def index():
+    session["csrf_token"] = secrets.token_hex(16)
     user_movies = []
     if "username" in session:
         user = users.get_user(session["username"])
         if user:
             user_movies = movies.get_movies()
-    return render_template('index.html', movies=user_movies)
+    return render_template('index.html', movies=user_movies, csrf_token=session.get("csrf_token"))
 
 @app.route('/login', methods=["GET", "POST"])
 def login():
@@ -48,6 +50,7 @@ def login():
 
     if check_password_hash(user['password_hash'], password):
         session["username"] = username
+        session["csrf_token"] = secrets.token_hex(16)
         return redirect("/")
     
     flash("Invalid username or password")
@@ -92,7 +95,11 @@ def add():
         existing_categories = categories.get_categories() or []
         existing_platforms = platforms.get_platforms() or []
         existing_directors = directors.get_directors() or []
-        return render_template("add.html", categories=existing_categories, directors=existing_directors, platforms=existing_platforms, current_year=datetime.now().year)
+        return render_template("add.html", categories=existing_categories, directors=existing_directors, platforms=existing_platforms, current_year=datetime.now().year, csrf_token=session.get("csrf_token"))
+    
+    csrf_token = request.form.get("csrf_token")
+    if not csrf_token or csrf_token != session.get("csrf_token"):
+        abort(403, description="CSRF validation failed ❌")
     
     # Handle POST request to add movie
     title = request.form.get("title", "").strip()
@@ -101,7 +108,7 @@ def add():
         existing_categories = categories.get_categories() or []
         existing_platforms = platforms.get_platforms() or []
         existing_directors = directors.get_directors() or []
-        return render_template("add.html", categories=existing_categories, directors=existing_directors, platforms=existing_platforms, current_year=datetime.now().year)
+        return render_template("add.html", categories=existing_categories, directors=existing_directors, platforms=existing_platforms, current_year=datetime.now().year, csrf_token=session.get("csrf_token"))
     
     # Handle category selection or creation
     category_id = None
