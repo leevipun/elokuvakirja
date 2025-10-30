@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="fi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Haku - Elokuvatietokanta</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <a href="/" class="navbutton">Etusivu</a>
+        <a href="/movies" class="navbutton">Elokuvat</a>
+        <a href="/search" class="navbutton active">Haku</a>
+        <a href="/add" class="navbutton">Lisää elokuva</a>
+        <a href="/logout" class="navbutton">Kirjaudu ulos</a>
+    </nav>
+
+    <!-- Header -->
+    <header>
+        <h1>🎬</h1>
+        <p>Elokuvatietokanta</p>
+    </header>
+
+    <main class="search-container">
+        <!-- Search Hero Section -->
+        <div class="search-hero">
+            <h1>Etsi elokuvia</h1>
+            <p>Löydä suosikkielokuvasi hakemalla nimen, ohjaajan, genren tai muiden kriteerien perusteella</p>
+        </div>
+
+        <!-- Search Form -->
+        <div class="search-form-container">
+            <form class="search-form" method="GET" action="/search">
+                <div class="search-main">
+                    <div class="search-input-group">
+                        <label for="q" class="filter-label">Hakusana</label>
+                        <input 
+                            type="text" 
+                            id="q" 
+                            name="q"
+                            class="search-input" 
+                            placeholder="Kirjoita elokuvan nimi, ohjaaja tai näyttelijä..."
+                            value="{{ request.args.get('q', '') }}"
+                            autocomplete="off"
+                        >
+                    </div>
+                    <button type="submit" class="search-btn">
+                        🔍 Hae
+                    </button>
+                </div>
+
+                <!-- Basic Filters -->
+                <div class="filters-section">
+                    <div class="filter-group">
+                        <label class="filter-label">Genre</label>
+                        <select class="filter-select" name="genre">
+                            <option value="">Kaikki genret</option>
+                            <option value="action" {{ 'selected' if request.args.get('genre') == 'action' }}>Toiminta</option>
+                            <option value="comedy" {{ 'selected' if request.args.get('genre') == 'comedy' }}>Komedia</option>
+                            <option value="drama" {{ 'selected' if request.args.get('genre') == 'drama' }}>Draama</option>
+                            <option value="horror" {{ 'selected' if request.args.get('genre') == 'horror' }}>Kauhu</option>
+                            <option value="romance" {{ 'selected' if request.args.get('genre') == 'romance' }}>Romanssi</option>
+                            <option value="scifi" {{ 'selected' if request.args.get('genre') == 'scifi' }}>Sci-Fi</option>
+                            <option value="thriller" {{ 'selected' if request.args.get('genre') == 'thriller' }}>Jännäri</option>
+                            <option value="animation" {{ 'selected' if request.args.get('genre') == 'animation' }}>Animaatio</option>
+                        </select>
+                    </div>
+
+                    <div class="filter-group">
+                        <label class="filter-label">Julkaisuvuosi</label>
+                        <select class="filter-select" name="year">
+                            <option value="">Kaikki vuodet</option>
+                            <option value="2024" {{ 'selected' if request.args.get('year') == '2024' }}>2024</option>
+                            <option value="2023" {{ 'selected' if request.args.get('year') == '2023' }}>2023</option>
+                            <option value="2022" {{ 'selected' if request.args.get('year') == '2022' }}>2022</option>
+                            <option value="2021" {{ 'selected' if request.args.get('year') == '2021' }}>2021</option>
+                            <option value="2020" {{ 'selected' if request.args.get('year') == '2020' }}>2020</option>
+                            <option value="2010s" {{ 'selected' if request.args.get('year') == '2010s' }}>2010-2019</option>
+                            <option value="2000s" {{ 'selected' if request.args.get('year') == '2000s' }}>2000-2009</option>
+                            <option value="1990s" {{ 'selected' if request.args.get('year') == '1990s' }}>1990-1999</option>
+                            <option value="older" {{ 'selected' if request.args.get('year') == 'older' }}>Vanhemmat</option>
+                        </select>
+                    </div>
+
+                    <div class="filter-group">
+                        <label class="filter-label">Alusta</label>
+                        <select class="filter-select" name="platform">
+                            <option value="">Kaikki alustat</option>
+                            <option value="netflix" {% if request.args.get('platform') == 'netflix' %}selected{% endif %}>Netflix</option>
+                            <option value="hbo" {{ 'selected' if request.args.get('platform') == 'hbo' }}>HBO Max</option>
+                            <option value="disney" {{ 'selected' if request.args.get('platform') == 'disney' }}>Disney+</option>
+                            <option value="amazon" {{ 'selected' if request.args.get('platform') == 'amazon' }}>Amazon Prime</option>
+                            <option value="apple" {{ 'selected' if request.args.get('platform') == 'apple' }}>Apple TV+</option>
+                            <option value="theater" {{ 'selected' if request.args.get('platform') == 'theater' }}>Elokuvateatteri</option>
+                        </select>
+                    </div>
+
+                    <div class="filter-group">
+                        <label class="filter-label">Minimiarvoste­lu</label>
+                        <select class="filter-select" name="rating">
+                            <option value="">Kaikki arvostelut</option>
+                            <option value="5" {{ 'selected' if request.args.get('rating') == '5' }}>⭐⭐⭐⭐⭐ (5/5)</option>
+                            <option value="4" {{ 'selected' if request.args.get('rating') == '4' }}>⭐⭐⭐⭐ (4/5+)</option>
+                            <option value="3" {{ 'selected' if request.args.get('rating') == '3' }}>⭐⭐⭐ (3/5+)</option>
+                            <option value="2" {{ 'selected' if request.args.get('rating') == '2' }}>⭐⭐ (2/5+)</option>
+                            <option value="1" {{ 'selected' if request.args.get('rating') == '1' }}>⭐ (1/5+)</option>
+                        </select>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- Search Results -->
+        <div class="search-results">
+            {% if movies is defined %}
+                <!-- Results Header -->
+                <div class="results-header">
+                    <div class="results-count">
+                        Löytyi {{ movies|length }} elokuvaa
+                    </div>
+                    <div class="sort-options">
+                        <label class="sort-label">Järjestä:</label>
+                        <select class="sort-select" onchange="window.location.href='{{ url_for('search') }}?' + new URLSearchParams(Object.assign(Object.fromEntries(new URLSearchParams(window.location.search)), {sort: this.value})).toString()">
+                            <option value="relevance" {{ 'selected' if request.args.get('sort') == 'relevance' }}>Osuvuus</option>
+                            <option value="title" {{ 'selected' if request.args.get('sort') == 'title' }}>Nimi A-Z</option>
+                            <option value="year" {{ 'selected' if request.args.get('sort') == 'year' }}>Julkaisuvuosi</option>
+                            <option value="rating" {{ 'selected' if request.args.get('sort') == 'rating' }}>Arvostelu</option>
+                            <option value="date_added" {{ 'selected' if request.args.get('sort') == 'date_added' }}>Lisäyspäivä</option>
+                        </select>
+                    </div>
+                </div>
+
+                {% if movies %}
+                    <!-- Results Grid -->
+                    <div class="movies-overview-grid">
+                        {% for movie in movies %}
+                        <div class="movie-overview-card" onclick="window.location.href='/movie/{{ movie.id }}'">
+                            <div class="movie-poster-mini">🎬</div>
+                            <div class="movie-overview-info">
+                                <h3>{{ movie.title }}</h3>
+                                <div class="movie-overview-meta">
+                                    <span class="meta-item">{{ movie.year }}</span>
+                                    {% if movie.category %}
+                                    <span class="meta-item genre">{{ movie.category.name }}</span>
+                                    {% endif %}
+                                    {% if movie.duration %}
+                                    <span class="meta-item">{{ movie.duration }} min</span>
+                                    {% endif %}
+                                </div>
+                                {% if movie.rating %}
+                                <div class="rating-mini">
+                                    <div class="rating-stars">
+                                        {% for i in range(movie.rating) %}⭐{% endfor %}
+                                    </div>
+                                    <span class="rating-value">{{ movie.rating }}/5</span>
+                                </div>
+                                {% endif %}
+                                <div class="movie-quick-badges">
+                                    {% if movie.is_favorite %}
+                                    <span class="quick-badge favorite">❤️</span>
+                                    {% endif %}
+                                    {% if movie.platform %}
+                                    <span class="quick-badge platform">
+                                        {% if movie.platform.name == 'Netflix' %}🔴
+                                        {% elif movie.platform.name == 'HBO Max' %}🟣
+                                        {% elif movie.platform.name == 'Disney+' %}🔵
+                                        {% elif movie.platform.name == 'Amazon Prime Video' %}🟡
+                                        {% elif movie.platform.name == 'Apple TV+' %}⚫
+                                        {% elif movie.platform.name == 'Elokuvateatteri' %}🎭
+                                        {% else %}📺
+                                        {% endif %}
+                                    </span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <!-- No Results -->
+                    <div class="no-results">
+                        <div class="no-results-icon">🎭</div>
+                        <h3>Ei hakutuloksia</h3>
+                        <p>Yritä erilaisia hakusanoja tai laajempia suodattimia</p>
+                        
+                        <div class="search-suggestions">
+                            <h4>Ehdotuksia:</h4>
+                            <div class="suggestions-list">
+                                <a href="{{ url_for('search', q='toiminta') }}" class="suggestion-tag">Toimintaelokuvat</a>
+                                <a href="{{ url_for('search', q='komedia') }}" class="suggestion-tag">Komediat</a>
+                                <a href="{{ url_for('search', year='2024') }}" class="suggestion-tag">Uudet elokuvat</a>
+                                <a href="{{ url_for('search', q='klassikko') }}" class="suggestion-tag">Klassikot</a>
+                                <a href="{{ url_for('search', q='suosikit') }}" class="suggestion-tag">Suosikit</a>
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
+            {% else %}
+                <!-- Default State -->
+                <div class="empty-movie-state">
+                    <div class="empty-illustration">🔍</div>
+                    <h3>Aloita haku</h3>
+                    <p>Kirjoita hakusana yllä olevaan kenttään tai käytä suodattimia löytääksesi elokuvia</p>
+                </div>
+            {% endif %}
+        </div>
+    </main>
+</body>
+</html>
