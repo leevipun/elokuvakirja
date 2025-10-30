@@ -2,9 +2,14 @@ from flask import Flask, render_template, request, flash, redirect, session, jso
 import sqlite3
 from werkzeug.security import check_password_hash
 from datetime import datetime
+import os
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 app = Flask(__name__, static_url_path='/static')
-app.secret_key = 'your_secret_key'
+app.secret_key = os.getenv("SECRET_KEY")
 
 import users
 import movies
@@ -178,6 +183,56 @@ def add():
         existing_categories = categories.get_categories() or []
         return render_template("add.html", categories=existing_categories, current_year=datetime.now().year)
 
+@app.route('/movie/<int:movie_id>')
+def movie_detail(movie_id):
+    user_id = None
+    if "username" in session:
+        user = users.get_user(session["username"])
+        user_id = user["id"] if user else None
+    
+    movie = movies.get_movie_by_id(movie_id, user_id)
+    if not movie:
+        flash("Movie not found")
+        return redirect("/")
+    
+    return render_template('movie_detail.html', movie=movie)
+
+@app.route('/search', methods=["GET"])
+def search():
+    if "username" not in session:
+        return redirect("/login")
+    
+    user = users.get_user(session["username"])
+    if not user:
+        return redirect("/login")
+    
+    # Get search parameters
+    query = request.args.get('q', '').strip()
+    genre = request.args.get('genre', '')
+    year = request.args.get('year', '')
+    platform = request.args.get('platform', '')
+    rating = request.args.get('rating', '')
+    sort_by = request.args.get('sort', 'relevance')
+    
+    # Get search results
+    search_results = []
+    if query or genre or year or platform or rating:
+        search_results = movies.search_movies(
+            user_id=user["id"],
+            query=query,
+            genre=genre,
+            year=year,
+            platform=platform,
+            rating=rating,
+            sort_by=sort_by
+        )
+    
+    return render_template('search.html', movies=search_results)
+
+@app.route('/logout')
+def logout():
+    session.clear()
+    return redirect("/")
 
 if __name__ == '__main__':
     app.run(debug=True)
