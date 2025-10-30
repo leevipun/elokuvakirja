@@ -10,7 +10,7 @@ import secrets
 load_dotenv()
 
 app = Flask(__name__, static_url_path='/static')
-app.secret_key = os.getenv("SECRET_KEY")
+app.secret_key = os.getenv("SECRET_KEY") or "fallback-secret-key-for-development-only"
 
 import users
 import movies
@@ -31,6 +31,7 @@ def index():
 @app.route('/login', methods=["GET", "POST"])
 def login():
     if request.method == "GET":
+        session["csrf_token"] = secrets.token_hex(16)  # Generate CSRF token for login page
         get_flashed_messages()
         return render_template('login.html')
     
