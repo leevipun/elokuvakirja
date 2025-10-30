@@ -9,11 +9,16 @@
 <body>
     <!-- Navigation -->
     <nav class="navbar">
-        <a href="/" class="navbutton">Etusivu</a>
-        <a href="/movies" class="navbutton">Elokuvat</a>
-        <a href="/search" class="navbutton active">Haku</a>
-        <a href="/add" class="navbutton">Lisää elokuva</a>
-        <a href="/logout" class="navbutton">Kirjaudu ulos</a>
+        <a href="/" class="navbutton ">All Movies</a>
+        {% if session.username %}
+        <a href="/add" class="navbutton">Add Movie</a>
+        {% endif %}
+        <a href="/search" class="navbutton active">Search</a>
+        {% if session.username %}
+        <a href="/logout" class="navbutton">Logout</a>
+        {% else %}
+        <a href="/login" class="navbutton">Login</a>
+        {% endif %}
     </nav>
 
     <!-- Header -->
