@@ -2,18 +2,49 @@ from werkzeug.security import check_password_hash, generate_password_hash
 
 import db 
 
-def get_movies():
-    sql = """
-    SELECT m.*
-    FROM movies m
-    ORDER BY m.created_at DESC
-    """
-    results = db.query(sql)
+def get_movies(user_id=None):
+    if user_id:
+        sql = """
+        SELECT m.*,
+               c.name AS category_name,
+               d.name AS director_name,
+               s.name AS platform_name
+        FROM movies m
+        LEFT JOIN categories c ON m.category_id = c.id
+        LEFT JOIN directors d ON m.director_id = d.id
+        LEFT JOIN streaming_platforms s ON m.streaming_platform_id = s.id
+        WHERE m.user_id = ?
+        ORDER BY m.created_at DESC
+        """
+        results = db.query(sql, [user_id])
+    else:
+        sql = """
+        SELECT m.*
+        FROM movies m
+        ORDER BY m.created_at DESC
+        """
+        results = db.query(sql)
     
     # Convert to list of dictionaries for easier handling
     movies = []
     for row in results:
         movie_dict = dict(row)
+        
+        # Create category object for template compatibility
+        if movie_dict.get('category_name'):
+            movie_dict['category'] = {'name': movie_dict['category_name']}
+        
+        # Create platform object for template compatibility  
+        if movie_dict.get('platform_name'):
+            movie_dict['platform'] = {'name': movie_dict['platform_name']}
+        
+        # Add favorite status
+        movie_dict['is_favorite'] = bool(movie_dict.get('favorite'))
+        
+        # Convert rating to 5-star scale for display if rating exists
+        if movie_dict.get('rating'):
+            movie_dict['rating'] = int(movie_dict['rating'] / 2)
+        
         movies.append(movie_dict)
         
     return movies if movies else []

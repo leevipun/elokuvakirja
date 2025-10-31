@@ -125,14 +125,34 @@
                         Löytyi {{ movies|length }} elokuvaa
                     </div>
                     <div class="sort-options">
-                        <label class="sort-label">Järjestä:</label>
-                        <select class="sort-select" onchange="window.location.href='{{ url_for('search') }}?' + new URLSearchParams(Object.assign(Object.fromEntries(new URLSearchParams(window.location.search)), {sort: this.value})).toString()">
-                            <option value="relevance" {{ 'selected' if request.args.get('sort') == 'relevance' }}>Osuvuus</option>
-                            <option value="title" {{ 'selected' if request.args.get('sort') == 'title' }}>Nimi A-Z</option>
-                            <option value="year" {{ 'selected' if request.args.get('sort') == 'year' }}>Julkaisuvuosi</option>
-                            <option value="rating" {{ 'selected' if request.args.get('sort') == 'rating' }}>Arvostelu</option>
-                            <option value="date_added" {{ 'selected' if request.args.get('sort') == 'date_added' }}>Lisäyspäivä</option>
-                        </select>
+                        <form method="GET" action="/search" style="display: inline;">
+                            <!-- Preserve existing search parameters -->
+                            {% if request.args.get('q') %}
+                            <input type="hidden" name="q" value="{{ request.args.get('q') }}">
+                            {% endif %}
+                            {% if request.args.get('genre') %}
+                            <input type="hidden" name="genre" value="{{ request.args.get('genre') }}">
+                            {% endif %}
+                            {% if request.args.get('year') %}
+                            <input type="hidden" name="year" value="{{ request.args.get('year') }}">
+                            {% endif %}
+                            {% if request.args.get('platform') %}
+                            <input type="hidden" name="platform" value="{{ request.args.get('platform') }}">
+                            {% endif %}
+                            {% if request.args.get('rating') %}
+                            <input type="hidden" name="rating" value="{{ request.args.get('rating') }}">
+                            {% endif %}
+                            
+                            <label class="sort-label">Järjestä:</label>
+                            <select class="sort-select" name="sort">
+                                <option value="relevance" {{ 'selected' if request.args.get('sort') == 'relevance' }}>Osuvuus</option>
+                                <option value="title" {{ 'selected' if request.args.get('sort') == 'title' }}>Nimi A-Z</option>
+                                <option value="year" {{ 'selected' if request.args.get('sort') == 'year' }}>Julkaisuvuosi</option>
+                                <option value="rating" {{ 'selected' if request.args.get('sort') == 'rating' }}>Arvostelu</option>
+                                <option value="date_added" {{ 'selected' if request.args.get('sort') == 'date_added' }}>Lisäyspäivä</option>
+                            </select>
+                            <button type="submit" class="sort-btn">Järjestä</button>
+                        </form>
                     </div>
                 </div>
 
@@ -140,46 +160,48 @@
                     <!-- Results Grid -->
                     <div class="movies-overview-grid">
                         {% for movie in movies %}
-                        <div class="movie-overview-card" onclick="window.location.href='/movie/{{ movie.id }}'">
-                            <div class="movie-poster-mini">🎬</div>
-                            <div class="movie-overview-info">
-                                <h3>{{ movie.title }}</h3>
-                                <div class="movie-overview-meta">
-                                    <span class="meta-item">{{ movie.year }}</span>
-                                    {% if movie.category %}
-                                    <span class="meta-item genre">{{ movie.category.name }}</span>
-                                    {% endif %}
-                                    {% if movie.duration %}
-                                    <span class="meta-item">{{ movie.duration }} min</span>
-                                    {% endif %}
-                                </div>
-                                {% if movie.rating %}
-                                <div class="rating-mini">
-                                    <div class="rating-stars">
-                                        {% for i in range(movie.rating) %}⭐{% endfor %}
-                                    </div>
-                                    <span class="rating-value">{{ movie.rating }}/5</span>
-                                </div>
-                                {% endif %}
-                                <div class="movie-quick-badges">
-                                    {% if movie.is_favorite %}
-                                    <span class="quick-badge favorite">❤️</span>
-                                    {% endif %}
-                                    {% if movie.platform %}
-                                    <span class="quick-badge platform">
-                                        {% if movie.platform.name == 'Netflix' %}🔴
-                                        {% elif movie.platform.name == 'HBO Max' %}🟣
-                                        {% elif movie.platform.name == 'Disney+' %}🔵
-                                        {% elif movie.platform.name == 'Amazon Prime Video' %}🟡
-                                        {% elif movie.platform.name == 'Apple TV+' %}⚫
-                                        {% elif movie.platform.name == 'Elokuvateatteri' %}🎭
-                                        {% else %}📺
+                        <a href="/movie/{{ movie.id }}" class="movie-overview-card-link">
+                            <div class="movie-overview-card">
+                                <div class="movie-poster-mini">🎬</div>
+                                <div class="movie-overview-info">
+                                    <h3>{{ movie.title }}</h3>
+                                    <div class="movie-overview-meta">
+                                        <span class="meta-item">{{ movie.year }}</span>
+                                        {% if movie.category %}
+                                        <span class="meta-item genre">{{ movie.category.name }}</span>
                                         {% endif %}
-                                    </span>
+                                        {% if movie.duration %}
+                                        <span class="meta-item">{{ movie.duration }} min</span>
+                                        {% endif %}
+                                    </div>
+                                    {% if movie.rating %}
+                                    <div class="rating-mini">
+                                        <div class="rating-stars">
+                                            {% for i in range(movie.rating) %}⭐{% endfor %}
+                                        </div>
+                                        <span class="rating-value">{{ movie.rating }}/5</span>
+                                    </div>
                                     {% endif %}
+                                    <div class="movie-quick-badges">
+                                        {% if movie.is_favorite %}
+                                        <span class="quick-badge favorite">❤️</span>
+                                        {% endif %}
+                                        {% if movie.platform %}
+                                        <span class="quick-badge platform">
+                                            {% if movie.platform.name == 'Netflix' %}🔴
+                                            {% elif movie.platform.name == 'HBO Max' %}🟣
+                                            {% elif movie.platform.name == 'Disney+' %}🔵
+                                            {% elif movie.platform.name == 'Amazon Prime Video' %}🟡
+                                            {% elif movie.platform.name == 'Apple TV+' %}⚫
+                                            {% elif movie.platform.name == 'Elokuvateatteri' %}🎭
+                                            {% else %}📺
+                                            {% endif %}
+                                        </span>
+                                        {% endif %}
+                                    </div>
                                 </div>
                             </div>
-                        </div>
+                        </a>
                         {% endfor %}
                     </div>
                 {% else %}

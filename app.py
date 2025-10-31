@@ -25,7 +25,7 @@ def index():
     if "username" in session:
         user = users.get_user(session["username"])
         if user:
-            user_movies = movies.get_movies()
+            user_movies = movies.get_movies(user["id"])  # Pass user_id to get user-specific movies
     return render_template('index.html', movies=user_movies, csrf_token=session.get("csrf_token"))
 
 @app.route('/login', methods=["GET", "POST"])
@@ -216,26 +216,31 @@ def search():
     
     # Get search parameters
     query = request.args.get('q', '').strip()
-    genre = request.args.get('genre', '')
-    year = request.args.get('year', '')
-    platform = request.args.get('platform', '')
-    rating = request.args.get('rating', '')
-    sort_by = request.args.get('sort', 'relevance')
+    genre = request.args.get('genre', '').strip()
+    year = request.args.get('year', '').strip()
+    platform = request.args.get('platform', '').strip()
+    rating = request.args.get('rating', '').strip()
+    sort_by = request.args.get('sort', 'date_added').strip()
     
-    # Get search results
-    search_results = []
-    if query or genre or year or platform or rating:
-        search_results = movies.search_movies(
-            user_id=user["id"],
-            query=query,
-            genre=genre,
-            year=year,
-            platform=platform,
-            rating=rating,
-            sort_by=sort_by
-        )
+    # Always get search results - if no parameters, it will return all user's movies
+    search_results = movies.search_movies(
+        user_id=user["id"],
+        query=query,
+        genre=genre,
+        year=year,
+        platform=platform,
+        rating=rating,
+        sort_by=sort_by
+    )
     
-    return render_template('search.html', movies=search_results)
+    # Get filter options for the form
+    available_categories = categories.get_categories() or []
+    available_platforms = platforms.get_platforms() or []
+    
+    return render_template('search.html', 
+                         movies=search_results,
+                         categories=available_categories,
+                         platforms=available_platforms)
 
 @app.route('/logout')
 def logout():
