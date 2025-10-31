@@ -10,4 +10,3 @@ def add_category(category_name):
     sql = "INSERT INTO categories (name) VALUES (?)"
     category_id = db.execute(sql, [category_name])
     return category_id
-    

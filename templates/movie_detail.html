@@ -62,6 +62,12 @@
 
                 {% if session.username %}
                 <div class="movie-actions-hero">
+                    {% if movie.user_id == session.user_id %} 
+                        <button class="btn-edit" onclick="window.location.href='/edit/{{ movie.id }}'">
+                            Edit Movie
+                        </button>
+                    {% endif %}
+
                     <button class="btn-favorite" id="favoriteBtn">
                         {% if movie.is_favorite %} 💖 Remove from Favorites {% else %} 🤍 Add to Favorites {% endif %}
                     </button>

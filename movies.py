@@ -1,6 +1,4 @@
-from werkzeug.security import check_password_hash, generate_password_hash
-
-import db 
+import db
 
 def get_movies(user_id=None):
     if user_id:
@@ -24,29 +22,25 @@ def get_movies(user_id=None):
         ORDER BY m.created_at DESC
         """
         results = db.query(sql)
-    
+
     # Convert to list of dictionaries for easier handling
     movies = []
     for row in results:
         movie_dict = dict(row)
-        
         # Create category object for template compatibility
         if movie_dict.get('category_name'):
             movie_dict['category'] = {'name': movie_dict['category_name']}
-        
-        # Create platform object for template compatibility  
+        # Create platform object for template compatibility
         if movie_dict.get('platform_name'):
             movie_dict['platform'] = {'name': movie_dict['platform_name']}
-        
         # Add favorite status
         movie_dict['is_favorite'] = bool(movie_dict.get('favorite'))
-        
         # Convert rating to 5-star scale for display if rating exists
         if movie_dict.get('rating'):
             movie_dict['rating'] = int(movie_dict['rating'] / 2)
-        
+
         movies.append(movie_dict)
-        
+
     return movies if movies else []
 
 def get_movie_by_id(movie_id, user_id=None):
@@ -64,12 +58,12 @@ def get_movie_by_id(movie_id, user_id=None):
         WHERE m.id = ?
     """
     results = db.query(sql, [movie_id])
-    
+
     if not results:
         return None
-    
+
     movie = dict(results[0])
-    
+
     return movie
 
 
@@ -77,9 +71,8 @@ def add_movie(user_id, movie):
     if not user_id:
         return "User ID is required."
 
-    
     # Insert movie into the movies table
-    sql = """INSERT INTO movies 
+    sql = """INSERT INTO movies
                 (title, 
                 year, 
                 duration, 
@@ -95,7 +88,7 @@ def add_movie(user_id, movie):
                 user_id) 
             VALUES 
                 (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"""
-    
+
     params = (
         movie["title"],
         movie["year"] if movie["year"] else None,
@@ -110,17 +103,16 @@ def add_movie(user_id, movie):
         bool(movie.get("favorite", False)),
         bool(movie.get("rewatchable", False)),
         user_id
-    ) 
-    
+    )
+
     db.execute(sql, params)
     return db.last_insert_id()
 
 def search_movies(user_id, query="", genre="", year="", platform="", rating="", sort_by="relevance"):
     """Search movies based on various criteria"""
-    
     # Base SQL query
     sql = """
-    SELECT 
+    SELECT
         m.*,
         c.name AS category_name,
         d.name AS director_name,
@@ -132,9 +124,9 @@ def search_movies(user_id, query="", genre="", year="", platform="", rating="", 
     LEFT JOIN streaming_platforms s ON m.streaming_platform_id = s.id
     WHERE m.user_id = ?
     """
-    
+
     params = [user_id]
-    
+
     # Add search conditions
     if query:
         sql += """ AND (
@@ -146,7 +138,7 @@ def search_movies(user_id, query="", genre="", year="", platform="", rating="", 
         )"""
         query_param = f"%{query}%"
         params.extend([query_param, query_param, query_param, query_param, query_param])
-    
+
     # Genre filter
     if genre:
         genre_mapping = {
@@ -162,7 +154,7 @@ def search_movies(user_id, query="", genre="", year="", platform="", rating="", 
         if genre in genre_mapping:
             sql += " AND LOWER(c.name) = LOWER(?)"
             params.append(genre_mapping[genre])
-    
+
     # Year filter
     if year:
         if year == '2024':
@@ -183,7 +175,7 @@ def search_movies(user_id, query="", genre="", year="", platform="", rating="", 
             sql += " AND m.year >= 1990 AND m.year <= 1999"
         elif year == 'older':
             sql += " AND m.year < 1990"
-    
+
     # Platform filter
     if platform:
         platform_mapping = {
@@ -197,7 +189,7 @@ def search_movies(user_id, query="", genre="", year="", platform="", rating="", 
         if platform in platform_mapping:
             sql += " AND LOWER(s.name) = LOWER(?)"
             params.append(platform_mapping[platform])
-    
+
     # Rating filter (minimum rating)
     if rating:
         try:
@@ -206,7 +198,7 @@ def search_movies(user_id, query="", genre="", year="", platform="", rating="", 
             params.append(min_rating)
         except ValueError:
             pass
-    
+
     # Sorting
     if sort_by == 'title':
         sql += " ORDER BY m.title ASC"
@@ -218,29 +210,25 @@ def search_movies(user_id, query="", genre="", year="", platform="", rating="", 
         sql += " ORDER BY m.created_at DESC"
     else:  # relevance or default
         sql += " ORDER BY m.created_at DESC"
-    
+
     results = db.query(sql, params)
-    
+
     # Convert to list of dictionaries with proper formatting
     movies = []
     for row in results:
         movie_dict = dict(row)
-        
         # Create category object for template compatibility
         if movie_dict.get('category_name'):
             movie_dict['category'] = {'name': movie_dict['category_name']}
-        
-        # Create platform object for template compatibility  
+        # Create platform object for template compatibility
         if movie_dict.get('platform_name'):
             movie_dict['platform'] = {'name': movie_dict['platform_name']}
-        
         # Add favorite status
         movie_dict['is_favorite'] = bool(movie_dict.get('favorite'))
-        
         # Convert rating to 5-star scale for display
         if movie_dict.get('rating'):
             movie_dict['rating'] = int(movie_dict['rating'] / 2)
-        
+
         movies.append(movie_dict)
-    
+
     return movies

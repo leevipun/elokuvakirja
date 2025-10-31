@@ -10,4 +10,3 @@ def add_platform(platform_name):
     sql = "INSERT INTO streaming_platforms (name) VALUES (?)"
     platform_id = db.execute(sql, [platform_name])
     return platform_id
-
