@@ -232,3 +232,43 @@ def search_movies(user_id, query="", genre="", year="", platform="", rating="", 
         movies.append(movie_dict)
 
     return movies
+
+def update_movie(user_id, movie):
+    if not user_id:
+        return "User ID is required."
+
+    # Update movie in the movies table
+    sql = """UPDATE movies SET
+                title = ?, 
+                year = ?, 
+                duration = ?, 
+                category_id = ?,
+                streaming_platform_id = ?,
+                director_id = ?,
+                watch_date = ?, 
+                rating = ?, 
+                watched_with = ?,
+                review = ?, 
+                favorite = ?, 
+                rewatchable = ?
+            WHERE id = ? AND user_id = ?"""
+
+    params = (
+        movie["title"],
+        movie["year"] if movie["year"] else None,
+        movie["duration"] if movie["duration"] else None,
+        movie.get("category_id") if movie.get("category_id") else None,
+        movie.get("streaming_platform_id") if movie.get("streaming_platform_id") else None,
+        movie.get("director_id") if movie.get("director_id") else None,
+        movie["watch_date"] if movie["watch_date"] else None,
+        movie["rating"] if movie["rating"] else None,
+        movie["watched_with"] if movie["watched_with"] else None,
+        movie["review"] if movie["review"] else None,
+        bool(movie.get("favorite", False)),
+        bool(movie.get("rewatchable", False)),
+        movie["id"],
+        user_id
+    )
+
+    db.execute(sql, params)
+    return movie["id"]
