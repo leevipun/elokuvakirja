@@ -15,7 +15,7 @@ $ pip install flask
 Asenna load_dotenv-kirjasto:
 pip install load_dotenv
 
-Lisää tiedosto .env, 
+Lisää tiedosto .env,
 
 joka sisältää muuttujan SECRET_KEY ja sillä arvon
 

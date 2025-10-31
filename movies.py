@@ -108,7 +108,7 @@ def add_movie(user_id, movie):
     db.execute(sql, params)
     return db.last_insert_id()
 
-def search_movies(user_id, query="", genre="", year="", platform="", rating="", sort_by="relevance"):
+def search_movies(user_id, filter_options):
     """Search movies based on various criteria"""
     # Base SQL query
     sql = """
@@ -126,6 +126,12 @@ def search_movies(user_id, query="", genre="", year="", platform="", rating="", 
     """
 
     params = [user_id]
+    query = filter_options.get("query", "").strip()
+    genre = filter_options.get("genre", "").strip()
+    year = filter_options.get("year", "").strip()
+    platform = filter_options.get("platform", "").strip()
+    rating = filter_options.get("rating", "").strip()
+    sort_by = filter_options.get("sort_by", "relevance").strip()
 
     # Add search conditions
     if query:
@@ -237,21 +243,23 @@ def update_movie(user_id, movie):
     if not user_id:
         return "User ID is required."
 
-    # Update movie in the movies table
-    sql = """UPDATE movies SET
-                title = ?, 
-                year = ?, 
-                duration = ?, 
-                category_id = ?,
-                streaming_platform_id = ?,
-                director_id = ?,
-                watch_date = ?, 
-                rating = ?, 
-                watched_with = ?,
-                review = ?, 
-                favorite = ?, 
-                rewatchable = ?
-            WHERE id = ? AND user_id = ?"""
+    # Insert movie into the movies table
+    sql = """INSERT INTO movies
+                (title, 
+                year, 
+                duration, 
+                category_id,
+                streaming_platform_id,
+                director_id,
+                watch_date, 
+                rating, 
+                watched_with,
+                review, 
+                favorite, 
+                rewatchable, 
+                user_id) 
+            VALUES 
+                (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"""
 
     params = (
         movie["title"],
@@ -266,9 +274,8 @@ def update_movie(user_id, movie):
         movie["review"] if movie["review"] else None,
         bool(movie.get("favorite", False)),
         bool(movie.get("rewatchable", False)),
-        movie["id"],
         user_id
     )
 
     db.execute(sql, params)
-    return movie["id"]
+    return db.last_insert_id()

@@ -226,12 +226,7 @@ def search():
     # Always get search results - if no parameters, it will return all user's movies
     search_results = movies.search_movies(
         user_id=user["id"],
-        query=query,
-        genre=genre,
-        year=year,
-        platform=platform,
-        rating=rating,
-        sort_by=sort_by
+        filter_options=request.args
     )
 
     # Get filter options for the form
@@ -245,13 +240,10 @@ def search():
 
 @app.route('/edit/<int:movie_id>', methods=["POST", "GET"])
 def edit(movie_id):
-    if "username" not in session:
-        return redirect("/login")
-
     user = users.get_user(session["username"])
     if not user:
         return redirect("/login")
-    
+
     if request.method == "GET":
         movie = movies.get_movie_by_id(movie_id, user["id"])
         if not movie:
