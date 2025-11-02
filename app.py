@@ -24,12 +24,14 @@ app.secret_key = os.getenv("SECRET_KEY") or "fallback-secret-key-for-development
 @app.route('/')
 def index():
     session["csrf_token"] = secrets.token_hex(16)
-    user_movies = []
+    user_id = None
     if "username" in session:
         user = users.get_user(session["username"])
-        session["user_id"] = user["id"]
         if user:
-            user_movies = movies.get_movies(user["id"])  # Pass user_id to get user-specific movies
+            user_id = user["id"]
+            session["user_id"] = user_id
+    
+    user_movies = movies.get_movies(user_id)
     return render_template('index.html', movies=user_movies, csrf_token=session.get("csrf_token"))
 
 @app.route('/login', methods=["GET", "POST"])
@@ -80,9 +82,10 @@ def register():
         return redirect("/register")
 
     try:
-        user = users.get_user(username)  # Get the user to access their ID
+        users.create_user(username, password)  # Create user first
+        user = users.get_user(username)  # Then get the user
         session["username"] = username
-        session["user_id"] = user["id"]  # Add this line
+        session["user_id"] = user["id"]
         return redirect("/")
     except sqlite3.IntegrityError:
         flash("Username already exists")
@@ -208,12 +211,11 @@ def movie_detail(movie_id):
 
 @app.route('/search', methods=["GET"])
 def search():
-    if "username" not in session:
-        return redirect("/login")
-
-    user = users.get_user(session["username"])
-    if not user:
-        return redirect("/login")
+    user_id = None
+    if "username" in session:
+        user = users.get_user(session["username"])
+        if user:
+            user_id = user["id"]
 
     # Get search parameters
     query = request.args.get('q', '').strip()
@@ -223,9 +225,9 @@ def search():
     rating = request.args.get('rating', '').strip()
     sort_by = request.args.get('sort', 'date_added').strip()
 
-    # Always get search results - if no parameters, it will return all user's movies
+    # Always get search results - works with or without user_id
     search_results = movies.search_movies(
-        user_id=user["id"],
+        user_id=user_id,
         filter_options=request.args
     )
 
@@ -240,6 +242,9 @@ def search():
 
 @app.route('/edit/<int:movie_id>', methods=["POST", "GET"])
 def edit(movie_id):
+    if "username" not in session:
+        return redirect("/login")
+    
     user = users.get_user(session["username"])
     if not user:
         return redirect("/login")
@@ -259,7 +264,7 @@ def edit(movie_id):
     if not csrf_token or csrf_token != session.get("csrf_token"):
         abort(403, description="CSRF validation failed ❌")
 
-    # Get the existing movie to ensure it belongs to the user
+    # Get the existing movie
     existing_movie = movies.get_movie_by_id(movie_id, user["id"])
     if not existing_movie:
         flash("Movie not found")

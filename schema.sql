@@ -27,12 +27,20 @@ CREATE TABLE movies (
   category_id INTEGER REFERENCES categories(id),
   streaming_platform_id INTEGER REFERENCES streaming_platforms(id),
   director_id INTEGER REFERENCES directors(id),
-  watch_date DATE,
-  rating DECIMAL(3,1) CHECK (rating BETWEEN 1 AND 10),
-  watched_with TEXT,
   review TEXT,
-  favorite BOOLEAN DEFAULT 0,
   rewatchable BOOLEAN DEFAULT 0,
-  user_id INTEGER REFERENCES users(id),
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE user_ratings (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL REFERENCES users(id),
+  movie_id INTEGER NOT NULL REFERENCES movies(id),
+  rating DECIMAL(2,1) CHECK (rating BETWEEN 1 AND 5),
+  watched BOOLEAN DEFAULT 0,
+  watch_date DATE,
+  watched_with TEXT,
+  favorite BOOLEAN DEFAULT 0,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE(user_id, movie_id)
 );

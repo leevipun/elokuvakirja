@@ -110,17 +110,14 @@
             </form>
         </div>
 
-        <!-- Search Results -->
         <div class="search-results">
             {% if movies is defined %}
-                <!-- Results Header -->
                 <div class="results-header">
                     <div class="results-count">
                         Löytyi {{ movies|length }} elokuvaa
                     </div>
                     <div class="sort-options">
                         <form method="GET" action="/search" style="display: inline;">
-                            <!-- Preserve existing search parameters -->
                             {% if request.args.get('q') %}
                             <input type="hidden" name="q" value="{{ request.args.get('q') }}">
                             {% endif %}
@@ -137,21 +134,20 @@
                             <input type="hidden" name="rating" value="{{ request.args.get('rating') }}">
                             {% endif %}
                             
-                            <label class="sort-label">Järjestä:</label>
+                            <label class="sort-label">Sort</label>
                             <select class="sort-select" name="sort">
-                                <option value="relevance" {{ 'selected' if request.args.get('sort') == 'relevance' }}>Osuvuus</option>
-                                <option value="title" {{ 'selected' if request.args.get('sort') == 'title' }}>Nimi A-Z</option>
-                                <option value="year" {{ 'selected' if request.args.get('sort') == 'year' }}>Julkaisuvuosi</option>
-                                <option value="rating" {{ 'selected' if request.args.get('sort') == 'rating' }}>Arvostelu</option>
-                                <option value="date_added" {{ 'selected' if request.args.get('sort') == 'date_added' }}>Lisäyspäivä</option>
+                                <option value="relevance" {{ 'selected' if request.args.get('sort') == 'relevance' }}>Relevance</option>
+                                <option value="title" {{ 'selected' if request.args.get('sort') == 'title' }}>Title A-Z</option>
+                                <option value="year" {{ 'selected' if request.args.get('sort') == 'year' }}>Release Year</option>
+                                <option value="rating" {{ 'selected' if request.args.get('sort') == 'rating' }}>Rating</option>
+                                <option value="date_added" {{ 'selected' if request.args.get('sort') == 'date_added' }}>Date Added</option>
                             </select>
-                            <button type="submit" class="sort-btn">Järjestä</button>
+                            <button type="submit" class="sort-btn">Sort</button>
                         </form>
                     </div>
                 </div>
 
                 {% if movies %}
-                    <!-- Results Grid -->
                     <div class="movies-overview-grid">
                         {% for movie in movies %}
                         <a href="/movie/{{ movie.id }}" class="movie-overview-card-link">
@@ -171,7 +167,7 @@
                                     {% if movie.rating %}
                                     <div class="rating-mini">
                                         <div class="rating-stars">
-                                            {% for i in range(movie.rating) %}⭐{% endfor %}
+                                            {% for i in range(movie.rating|int) %}⭐{% endfor %}
                                         </div>
                                         <span class="rating-value">{{ movie.rating }}/5</span>
                                     </div>
@@ -182,14 +178,7 @@
                                         {% endif %}
                                         {% if movie.platform %}
                                         <span class="quick-badge platform">
-                                            {% if movie.platform.name == 'Netflix' %}🔴
-                                            {% elif movie.platform.name == 'HBO Max' %}🟣
-                                            {% elif movie.platform.name == 'Disney+' %}🔵
-                                            {% elif movie.platform.name == 'Amazon Prime Video' %}🟡
-                                            {% elif movie.platform.name == 'Apple TV+' %}⚫
-                                            {% elif movie.platform.name == 'Elokuvateatteri' %}🎭
-                                            {% else %}📺
-                                            {% endif %}
+                                            {{ movie.platform.name }}
                                         </span>
                                         {% endif %}
                                     </div>
@@ -202,27 +191,16 @@
                     <!-- No Results -->
                     <div class="no-results">
                         <div class="no-results-icon">🎭</div>
-                        <h3>Ei hakutuloksia</h3>
-                        <p>Yritä erilaisia hakusanoja tai laajempia suodattimia</p>
-                        
-                        <div class="search-suggestions">
-                            <h4>Ehdotuksia:</h4>
-                            <div class="suggestions-list">
-                                <a href="{{ url_for('search', q='toiminta') }}" class="suggestion-tag">Toimintaelokuvat</a>
-                                <a href="{{ url_for('search', q='komedia') }}" class="suggestion-tag">Komediat</a>
-                                <a href="{{ url_for('search', year='2024') }}" class="suggestion-tag">Uudet elokuvat</a>
-                                <a href="{{ url_for('search', q='klassikko') }}" class="suggestion-tag">Klassikot</a>
-                                <a href="{{ url_for('search', q='suosikit') }}" class="suggestion-tag">Suosikit</a>
-                            </div>
-                        </div>
+                        <h3>No results</h3>
+                        <p>Try different search terms or broader filters</p>
                     </div>
                 {% endif %}
             {% else %}
                 <!-- Default State -->
                 <div class="empty-movie-state">
                     <div class="empty-illustration">🔍</div>
-                    <h3>Aloita haku</h3>
-                    <p>Kirjoita hakusana yllä olevaan kenttään tai käytä suodattimia löytääksesi elokuvia</p>
+                    <h3>Start search</h3>
+                    <p>Type a search term in the field above or use filters to find movies</p>
                 </div>
             {% endif %}
         </div>
