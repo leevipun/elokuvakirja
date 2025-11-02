@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Haku - Elokuvatietokanta</title>
+    <title>Search - Movie Mania</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 </head>
 <body>
@@ -24,14 +24,16 @@
     <!-- Header -->
     <header>
         <h1>🎬</h1>
-        <p>Elokuvatietokanta</p>
+        <p>Movie Library</p>
     </header>
 
     <main class="search-container">
         <!-- Search Hero Section -->
         <div class="search-hero">
-            <h1>Etsi elokuvia</h1>
-            <p>Löydä suosikkielokuvasi hakemalla nimen, ohjaajan, genren tai muiden kriteerien perusteella</p>
+            <h1>Find movies</h1>
+            <p>
+                Find your favorite movies searching with name, director, genre or with other criterias
+            </p>
         </div>
 
         <!-- Search Form -->
@@ -39,7 +41,7 @@
             <form class="search-form" method="GET" action="/search">
                 <div class="search-main">
                     <div class="search-input-group">
-                        <label for="q" class="filter-label">Hakusana</label>
+                        <label for="q" class="filter-label">Name of a movie</label>
                         <input 
                             type="text" 
                             id="q" 
@@ -51,7 +53,7 @@
                         >
                     </div>
                     <button type="submit" class="search-btn">
-                        🔍 Hae
+                        🔍 Search
                     </button>
                 </div>
 
@@ -60,22 +62,17 @@
                     <div class="filter-group">
                         <label class="filter-label">Genre</label>
                         <select class="filter-select" name="genre">
-                            <option value="">Kaikki genret</option>
-                            <option value="action" {{ 'selected' if request.args.get('genre') == 'action' }}>Toiminta</option>
-                            <option value="comedy" {{ 'selected' if request.args.get('genre') == 'comedy' }}>Komedia</option>
-                            <option value="drama" {{ 'selected' if request.args.get('genre') == 'drama' }}>Draama</option>
-                            <option value="horror" {{ 'selected' if request.args.get('genre') == 'horror' }}>Kauhu</option>
-                            <option value="romance" {{ 'selected' if request.args.get('genre') == 'romance' }}>Romanssi</option>
-                            <option value="scifi" {{ 'selected' if request.args.get('genre') == 'scifi' }}>Sci-Fi</option>
-                            <option value="thriller" {{ 'selected' if request.args.get('genre') == 'thriller' }}>Jännäri</option>
-                            <option value="animation" {{ 'selected' if request.args.get('genre') == 'animation' }}>Animaatio</option>
+                            <option value="">All genres</option>
+                            {% for category in categories %}
+                            <option value="{{ category.name|lower }}" {% if request.args.get('genre') == category.name|lower %}selected{% endif %}>{{ category.name }}</option>
+                            {% endfor %}
                         </select>
                     </div>
 
                     <div class="filter-group">
-                        <label class="filter-label">Julkaisuvuosi</label>
+                        <label class="filter-label">Release Year</label>
                         <select class="filter-select" name="year">
-                            <option value="">Kaikki vuodet</option>
+                            <option value="">All years</option>
                             <option value="2024" {{ 'selected' if request.args.get('year') == '2024' }}>2024</option>
                             <option value="2023" {{ 'selected' if request.args.get('year') == '2023' }}>2023</option>
                             <option value="2022" {{ 'selected' if request.args.get('year') == '2022' }}>2022</option>
@@ -84,27 +81,24 @@
                             <option value="2010s" {{ 'selected' if request.args.get('year') == '2010s' }}>2010-2019</option>
                             <option value="2000s" {{ 'selected' if request.args.get('year') == '2000s' }}>2000-2009</option>
                             <option value="1990s" {{ 'selected' if request.args.get('year') == '1990s' }}>1990-1999</option>
-                            <option value="older" {{ 'selected' if request.args.get('year') == 'older' }}>Vanhemmat</option>
+                            <option value="older" {{ 'selected' if request.args.get('year') == 'older' }}>Older</option>
                         </select>
                     </div>
 
                     <div class="filter-group">
-                        <label class="filter-label">Alusta</label>
+                        <label class="filter-label">Platforms</label>
                         <select class="filter-select" name="platform">
-                            <option value="">Kaikki alustat</option>
-                            <option value="netflix" {% if request.args.get('platform') == 'netflix' %}selected{% endif %}>Netflix</option>
-                            <option value="hbo" {{ 'selected' if request.args.get('platform') == 'hbo' }}>HBO Max</option>
-                            <option value="disney" {{ 'selected' if request.args.get('platform') == 'disney' }}>Disney+</option>
-                            <option value="amazon" {{ 'selected' if request.args.get('platform') == 'amazon' }}>Amazon Prime</option>
-                            <option value="apple" {{ 'selected' if request.args.get('platform') == 'apple' }}>Apple TV+</option>
-                            <option value="theater" {{ 'selected' if request.args.get('platform') == 'theater' }}>Elokuvateatteri</option>
+                            <option value="">All platforms</option>
+                            {% for platform in platforms %}
+                            <option value="{{ platform.name|lower }}" {% if request.args.get('platform') == platform.name|lower %}selected{% endif %}>{{ platform.name }}</option>
+                            {% endfor %}
                         </select>
                     </div>
 
                     <div class="filter-group">
-                        <label class="filter-label">Minimiarvoste­lu</label>
+                        <label class="filter-label">Minimum rating</label>
                         <select class="filter-select" name="rating">
-                            <option value="">Kaikki arvostelut</option>
+                            <option value="">All ratings</option>
                             <option value="5" {{ 'selected' if request.args.get('rating') == '5' }}>⭐⭐⭐⭐⭐ (5/5)</option>
                             <option value="4" {{ 'selected' if request.args.get('rating') == '4' }}>⭐⭐⭐⭐ (4/5+)</option>
                             <option value="3" {{ 'selected' if request.args.get('rating') == '3' }}>⭐⭐⭐ (3/5+)</option>
