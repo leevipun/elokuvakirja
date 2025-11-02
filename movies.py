@@ -75,8 +75,8 @@ def get_movie_by_id(movie_id, user_id=None):
                 s.name AS platform,
                 ur.rating AS user_rating,
                 ur.watched AS user_watched,
-                ur.watch_date AS user_watch_date,
-                ur.watched_with AS user_watched_with,
+                ur.watch_date,
+                ur.watched_with,
                 ur.favorite AS user_favorite,
                 AVG(CAST(ur2.rating AS FLOAT)) AS average_rating,
                 COUNT(ur2.id) AS total_ratings
@@ -138,11 +138,12 @@ def add_movie(user_id, movie):
                     duration, 
                     category_id,
                     streaming_platform_id,
+                    owner_id,
                     director_id,
                     review, 
                     rewatchable) 
                 VALUES 
-                    (?, ?, ?, ?, ?, ?, ?, ?)"""
+                    (?, ?, ?, ?, ?, ?, ?, ?, ?)"""
 
         params = (
             movie["title"],
@@ -150,6 +151,7 @@ def add_movie(user_id, movie):
             movie["duration"] if movie["duration"] else None,
             movie.get("category_id") if movie.get("category_id") else None,
             movie.get("streaming_platform_id") if movie.get("streaming_platform_id") else None,
+            user_id,
             movie.get("director_id") if movie.get("director_id") else None,
             movie["review"] if movie["review"] else None,
             bool(movie.get("rewatchable", False))

@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Edit {{ movie.title }} - Movie Mania</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}" />
+</head>
+
+<body>
+    <nav class="navbar">
+        <a href="/" class="navbutton">All Movies</a>
+        {% if session.username %}
+        <a href="/add" class="navbutton">Add Movie</a>
+        <a href="/favorites" class="navbutton">Favorites</a>
+        <a href="/logout" class="navbutton">Logout</a>
+        {% else %}
+        <a href="/login" class="navbutton">Login</a>
+        {% endif %}
+    </nav>
+
+    <header>
+        <h1>Edit Movie</h1>
+        <p>Update "{{ movie.title }}" details</p>
+    </header>
+
+    <main>
+        {% with messages = get_flashed_messages() %}
+        {% if messages %}
+        <div class="flash-messages">
+            {% for message in messages %}
+            <div class="flash-message error">{{ message }}</div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% endwith %}
+
+        <form id="editMovieForm" class="add-movie-form" method="POST" action="/edit/{{ movie.id }}">
+            <input type="hidden" name="csrf_token" value="{{ session.csrf_token }}" />
+            
+            <div class="form-section">
+                <h3>Basic Information</h3>
+                
+                <div class="form-group">
+                    <label for="title">Movie Title *</label>
+                    <input type="text" id="title" name="title" value="{{ movie.title }}" required placeholder="e.g. The Shawshank Redemption" />
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="year">Release Year *</label>
+                        <input type="number" id="year" name="year" value="{{ movie.year }}" min="1800" max="{{ current_year or 2025 }}" placeholder="1994" required />
+                    </div>
+
+                    <div class="form-group">
+                        <label for="duration">Duration (min) *</label>
+                        <input type="number" id="duration" name="duration" value="{{ movie.duration }}" min="1" max="999" placeholder="142" required />
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="director">Director *</label>
+                    <select id="director" name="director" required>
+                        <option value="">Select Existing Director</option>
+                        {% for dir in directors %}
+                        <option value="{{ dir.id }}" {% if dir.id == movie.director_id %}selected{% endif %}>{{ dir.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="new_director">Or Add New Director</label>
+                    <input type="text" id="new_director" name="new_director" placeholder="Enter new director name (will override selection above)" />
+                </div>
+
+                <div class="form-group">
+                    <label for="category">Category *</label>
+                    <select id="category" name="category" required>
+                        <option value="">Select Existing Category</option>
+                        {% for cat in categories %}
+                        <option value="{{ cat.id }}" {% if cat.id == movie.category_id %}selected{% endif %}>{{ cat.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="new_category">Or Add New Category</label>
+                    <input type="text" id="new_category" name="new_category" placeholder="Enter new category name (will override selection above)" />
+                </div>
+            </div>
+
+            <div class="form-section">
+                <h3>Viewing Details</h3>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="watchDate">Watch Date *</label>
+                        <input type="date" id="watchDate" name="watchDate" value="{{ movie.watch_date | dateformat }}" required />
+                    </div>
+
+                    <div class="form-group">
+                        <label for="rating">Rating (1-10) *</label>
+                        <input type="number" id="rating" name="rating" value="{{ movie.user_rating }}" min="1" max="10" step="0.1" placeholder="8.5" required />
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="watchedWith">Watched With *</label>
+                    <input type="text" id="watchedWith" name="watchedWith" value="{{ movie.watched_with }}" placeholder="e.g. Family, Friends, Alone" required />
+                </div>
+
+                <div class="form-group">
+                    <label for="streaming_platform">Streaming Platform *</label>
+                    <select id="streaming_platform" name="streaming_platform" required>
+                        <option value="">Select Existing Platform</option>
+                        {% for platform in platforms %}
+                        <option value="{{ platform.id }}" {% if platform.id == movie.streaming_platform_id %}selected{% endif %}>{{ platform.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="new_platform">Or Add New Platform</label>
+                    <input type="text" id="new_platform" name="new_platform" placeholder="Enter new platform name (will override selection above)" />
+                </div>
+            </div>
+
+            <div class="form-section">
+                <h3>Additional Details</h3>
+
+                <div class="form-group">
+                    <label for="review">Review/Notes</label>
+                    <textarea id="review" name="review" rows="4" placeholder="Share your thoughts about the movie...">{{ movie.review }}</textarea>
+                </div>
+
+                <div class="form-group checkbox-group">
+                    <input type="checkbox" id="favorite" name="favorite" {% if movie.favorite %}checked{% endif %} />
+                    <label for="favorite">Mark as Favorite ⭐</label>
+                </div>
+
+                <div class="form-group checkbox-group">
+                    <input type="checkbox" id="rewatchable" name="rewatchable" {% if movie.rewatchable %}checked{% endif %} />
+                    <label for="rewatchable">Would watch again</label>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <a href="/movie/{{ movie.id }}" class="btn-secondary">Cancel</a>
+                <button type="submit" class="btn-primary">Update Movie</button>
+            </div>
+        </form>
+    </main>
+</body>
+
+</html>

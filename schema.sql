@@ -24,6 +24,7 @@ CREATE TABLE movies (
   title TEXT NOT NULL,
   year INTEGER,
   duration INTEGER,
+  owner_id INTEGER NOT NULL REFERENCES users(id),
   category_id INTEGER REFERENCES categories(id),
   streaming_platform_id INTEGER REFERENCES streaming_platforms(id),
   director_id INTEGER REFERENCES directors(id),

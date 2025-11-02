@@ -105,16 +105,16 @@
                             <span class="detail-value platform-{{ movie.platform }}">{{ movie.platform.title() }}</span>
                         </div>
                         {% endif %} 
-                        {% if movie.user_watch_date %}
+                        {% if movie.watch_date %}
                         <div class="detail-item">
                             <span class="detail-label">My Watch Date:</span>
-                            <span class="detail-value">{{ movie.user_watch_date }}</span>
+                            <span class="detail-value">{{ movie.watch_date }}</span>
                         </div>
                         {% endif %} 
-                        {% if movie.user_watched_with %}
+                        {% if movie.watched_with %}
                         <div class="detail-item">
                             <span class="detail-label">Watched With:</span>
-                            <span class="detail-value">{{ movie.user_watched_with }}</span>
+                            <span class="detail-value">{{ movie.watched_with }}</span>
                         </div>
                         {% endif %}
                     </div>

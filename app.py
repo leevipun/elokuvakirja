@@ -20,6 +20,19 @@ load_dotenv()
 app = Flask(__name__, static_url_path='/static')
 app.secret_key = os.getenv("SECRET_KEY") or "fallback-secret-key-for-development-only"
 
+# Add Jinja2 filter for date formatting
+@app.template_filter('dateformat')
+def dateformat(date_value):
+    """Format date for HTML date input (YYYY-MM-DD)"""
+    if not date_value:
+        return ""
+    # If it's already a string in YYYY-MM-DD format, return it
+    if isinstance(date_value, str):
+        return date_value
+    # If it's a datetime object, format it
+    if isinstance(date_value, datetime):
+        return date_value.strftime('%Y-%m-%d')
+    return str(date_value)
 
 @app.route('/')
 def index():
@@ -181,6 +194,7 @@ def add():
         "watch_date": request.form.get("watchDate") or None,
         "rating": request.form.get("rating") or None,
         "watched_with": request.form.get("watchedWith", "").strip() or None,
+        "owner_id": user["id"],
         "review": request.form.get("review", "").strip() or None,
         "favorite": bool(request.form.get("favorite")),
         "rewatchable": bool(request.form.get("rewatchable"))
@@ -254,10 +268,12 @@ def edit(movie_id):
         if not movie:
             flash("Movie not found")
             return redirect("/")
+        if movie["owner_id"] != user["id"]:
+            return render_template("edit.html", movie=movie)
         existing_categories = categories.get_categories() or []
         existing_platforms = platforms.get_platforms() or []
         existing_directors = directors.get_directors() or []
-        return render_template('edit.html', movie=movie, categories=existing_categories, directors=existing_directors, platforms=existing_platforms, current_year=datetime.now().year, csrf_token=session.get("csrf_token"))
+        return render_template('edit_owner.html', movie=movie, categories=existing_categories, directors=existing_directors, platforms=existing_platforms, current_year=datetime.now().year, csrf_token=session.get("csrf_token"))
 
     # Handle POST request to update movie
     csrf_token = request.form.get("csrf_token")
@@ -339,6 +355,8 @@ def edit(movie_id):
         "favorite": bool(request.form.get("favorite")),
         "rewatchable": bool(request.form.get("rewatchable"))
     }
+
+    print("Updating movie with data:", movie_data)
 
     try:
         movies.update_movie(user["id"], movie_data)
