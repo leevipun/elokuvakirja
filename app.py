@@ -13,6 +13,7 @@ import movies
 import categories
 import platforms
 import directors
+import review
 
 # Load environment variables from .env file
 load_dotenv()
@@ -223,6 +224,40 @@ def movie_detail(movie_id):
 
     return render_template('movie_detail.html', movie=movie)
 
+@app.route('/add-review/<int:movie_id>', methods=["POST", "GET"])
+def add_review(movie_id):
+    if "username" not in session:
+        return redirect("/login")
+    if request.method == "GET":
+        movie = movies.get_movie_by_id(movie_id)
+        if not movie:
+            flash("Movie not found")
+            return redirect("/")
+        return render_template("edit.html", movie=movie)
+
+    user = users.get_user(session["username"])
+
+    movie_data = {
+        "id": movie_id,
+        "title": request.form.get("title", "").strip(),
+        "year": request.form.get("year") or None,
+        "duration": request.form.get("duration") or None,
+        "watch_date": request.form.get("watchDate") or None,
+        "rating": request.form.get("rating") or None,
+        "watched_with": request.form.get("watchedWith", "").strip() or None,
+        "review": request.form.get("review", "").strip() or None,
+        "favorite": bool(request.form.get("favorite")),
+        "rewatchable": bool(request.form.get("rewatchable"))
+    }    
+
+    try:
+        review.add_review(user["id"], movie_data)
+        flash("Review added successfully!", "success")
+        return redirect(f"/movie/{movie_id}")
+    except Exception as e:
+        flash(f"Error adding review: {str(e)}", "error")
+        return redirect(f"/add-review/{movie_id}")
+
 @app.route('/search', methods=["GET"])
 def search():
     user_id = None
@@ -355,8 +390,6 @@ def edit(movie_id):
         "favorite": bool(request.form.get("favorite")),
         "rewatchable": bool(request.form.get("rewatchable"))
     }
-
-    print("Updating movie with data:", movie_data)
 
     try:
         movies.update_movie(user["id"], movie_data)

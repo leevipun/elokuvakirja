@@ -35,13 +35,13 @@
         </div>
         {% endif %}
         {% endwith %}
-
-        <form id="editMovieForm" class="add-movie-form" method="POST" action="/edit/{{ movie.id }}">
+        
+        <form id="editMovieForm" class="add-movie-form" method="POST" action="{% if request.endpoint == 'edit' %}/edit/{{ movie.id }}{% else %}/add-review/{{ movie.id }}{% endif %}">
             <input type="hidden" name="csrf_token" value="{{ session.csrf_token }}" />
 
             <div class="form-section">
-                <h3>Movie Information</h3>
-
+                <h3>Movie Information {% if request.endpoint == 'edit' %}/edit/{{ movie.id }}{% else %}/add-review/{{ movie.id }}{% endif %}
+</h3>
                 <div class="form-group">
                     <label>Movie Title</label>
                     <div class="form-static-value">{{ movie.title }}</div>
