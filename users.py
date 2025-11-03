@@ -1,6 +1,6 @@
-from werkzeug.security import check_password_hash, generate_password_hash
+from werkzeug.security import generate_password_hash
 
-import db 
+import db
 
 def create_user(username, password):
     password_hash = generate_password_hash(password)

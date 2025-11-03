@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Edit {{ movie.title }} - Movie Mania</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}" />
+</head>
+
+<body>
+    <nav class="navbar">
+        <a href="/" class="navbutton">All Movies</a>
+        {% if session.username %}
+        <a href="/add" class="navbutton">Add Movie</a>
+        <a href="/search" class="navbutton">Search</a>
+        <a href="/logout" class="navbutton">Logout</a>
+        {% else %}
+        <a href="/login" class="navbutton">Login</a>
+        {% endif %}
+    </nav>
+
+    <header>
+        <h1>Edit My Rating</h1>
+        <p>Update your rating for "{{ movie.title }}"</p>
+    </header>
+
+    <main>
+        {% with messages = get_flashed_messages() %}
+        {% if messages %}
+        <div class="flash-messages">
+            {% for message in messages %}
+            <div class="flash-message error">{{ message }}</div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% endwith %}
+
+        <form id="editMovieForm" class="add-movie-form" method="POST" action="/edit/{{ movie.id }}">
+            <input type="hidden" name="csrf_token" value="{{ session.csrf_token }}" />
+
+            <div class="form-section">
+                <h3>Movie Information</h3>
+
+                <div class="form-group">
+                    <label>Movie Title</label>
+                    <div class="form-static-value">{{ movie.title }}</div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Release Year</label>
+                        <div class="form-static-value">{{ movie.year or 'Unknown' }}</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Duration</label>
+                        <div class="form-static-value">{{ movie.duration or 'Unknown' }} min</div>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Director</label>
+                        <div class="form-static-value">{{ movie.director or 'Unknown' }}</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Category</label>
+                        <div class="form-static-value">{{ movie.genre or 'Unknown' }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <h3>My Viewing Details</h3>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="watchDate">Watch Date</label>
+                        <input type="date" id="watchDate" name="watchDate" value="{{ movie.watch_date | dateformat }}" />
+                    </div>
+
+                    <div class="form-group">
+                        <label for="rating">My Rating (1-5) *</label>
+                        <input type="number" id="rating" name="rating" value="{{ movie.user_rating or '' }}" min="1"
+                            max="5" step="0.1" placeholder="5" required />
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="watchedWith">Watched With</label>
+                    <input type="text" id="watchedWith" name="watchedWith" value="{{ movie.watched_with or '' }}"
+                        placeholder="e.g. Family, Friends, Alone" />
+                </div>
+
+                <div class="form-group checkbox-group">
+                    <input type="checkbox" id="favorite" name="favorite" {% if movie.is_favorite %}checked{% endif %} />
+                    <label for="favorite">Mark as Favorite ⭐</label>
+                </div>
+
+                <div class="form-group checkbox-group">
+                    <input type="checkbox" id="rewatchable" name="rewatchable" {% if movie.rewatchable %}checked{% endif
+                        %} />
+                    <label for="rewatchable">Would watch again</label>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <a href="/movie/{{ movie.id }}" class="btn-secondary">Cancel</a>
+                <button type="submit" class="btn-primary">Save My Rating</button>
+            </div>
+        </form>
+    </main>
+</body>
+
+</html>
