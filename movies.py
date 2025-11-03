@@ -96,11 +96,14 @@ def get_movie_by_id(movie_id, user_id=None):
                 m.*,
                 c.name AS genre,
                 d.name AS director,
-                s.name AS platform
+                s.name AS platform,
+                AVG(CAST(ur.rating AS FLOAT)) AS average_rating,
+                COUNT(ur.id) AS total_ratings
             FROM movies m
             LEFT JOIN categories c ON m.category_id = c.id
             LEFT JOIN streaming_platforms s ON m.streaming_platform_id = s.id
             LEFT JOIN directors d ON m.director_id = d.id
+            LEFT JOIN user_ratings ur ON m.id = ur.movie_id
             WHERE m.id = ?
             GROUP BY m.id
         """
