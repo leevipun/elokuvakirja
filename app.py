@@ -408,7 +408,7 @@ def dashboard():
     if not user:
         return redirect("/login")
 
-    user_movies = movies.get_movies(user["id"])
+    user_movies = movies.get_movies_by_user(user["id"])
     user_reviews = review.get_reviews_by_user(user["id"])
     total_movies = len(user_movies)
     favorite_movies = [movie for movie in user_movies if movie.get("favorite")]

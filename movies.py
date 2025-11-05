@@ -1,45 +1,22 @@
 import db
 
-def get_movies(user_id=None):
-    if user_id:
-        sql = """
-        SELECT m.*,
-               c.name AS category_name,
-               d.name AS director_name,
-               s.name AS platform_name,
-               ur.rating AS user_rating,
-               ur.watched AS user_watched,
-               ur.favorite AS user_favorite,
-               AVG(CAST(ur2.rating AS FLOAT)) AS average_rating,
-               COUNT(ur2.id) AS total_ratings
-        FROM movies m
-        LEFT JOIN categories c ON m.category_id = c.id
-        LEFT JOIN directors d ON m.director_id = d.id
-        LEFT JOIN streaming_platforms s ON m.streaming_platform_id = s.id
-        LEFT JOIN user_ratings ur ON m.id = ur.movie_id AND ur.user_id = ?
-        LEFT JOIN user_ratings ur2 ON m.id = ur2.movie_id
-        WHERE ur.id IS NOT NULL
-        GROUP BY m.id
-        ORDER BY ur.created_at DESC
-        """
-        results = db.query(sql, [user_id])
-    else:
-        sql = """
-        SELECT m.*,
-               c.name AS category_name,
-               d.name AS director_name,
-               s.name AS platform_name,
-               AVG(CAST(ur.rating AS FLOAT)) AS average_rating,
-               COUNT(ur.id) AS total_ratings
-        FROM movies m
-        LEFT JOIN categories c ON m.category_id = c.id
-        LEFT JOIN directors d ON m.director_id = d.id
-        LEFT JOIN streaming_platforms s ON m.streaming_platform_id = s.id
-        LEFT JOIN user_ratings ur ON m.id = ur.movie_id
-        GROUP BY m.id
-        ORDER BY m.created_at DESC
-        """
-        results = db.query(sql)
+def get_movies():
+    sql = """
+    SELECT m.*,
+            c.name AS category_name,
+            d.name AS director_name,
+            s.name AS platform_name,
+            AVG(CAST(ur.rating AS FLOAT)) AS average_rating,
+            COUNT(ur.id) AS total_ratings
+    FROM movies m
+    LEFT JOIN categories c ON m.category_id = c.id
+    LEFT JOIN directors d ON m.director_id = d.id
+    LEFT JOIN streaming_platforms s ON m.streaming_platform_id = s.id
+    LEFT JOIN user_ratings ur ON m.id = ur.movie_id
+    GROUP BY m.id
+    ORDER BY m.created_at DESC
+    """
+    results = db.query(sql)
 
     # Convert to list of dictionaries for easier handling
     movies = []
@@ -120,6 +97,48 @@ def get_movie_by_id(movie_id, user_id=None):
     movie['is_favorite'] = bool(movie.get('user_favorite'))
 
     return movie
+
+def get_movies_by_user(user_id):
+    sql = """SELECT m.*,
+                    c.name AS category_name,
+                    d.name AS director_name,
+                    s.name AS platform_name,
+                    ur.rating AS user_rating,
+                    ur.watched AS user_watched,
+                    ur.favorite AS user_favorite,
+                    AVG(CAST(ur2.rating AS FLOAT)) AS average_rating,
+                    COUNT(ur2.id) AS total_ratings
+             FROM user_ratings ur
+             JOIN movies m ON ur.movie_id = m.id
+             LEFT JOIN categories c ON m.category_id = c.id
+             LEFT JOIN directors d ON m.director_id = d.id
+             LEFT JOIN streaming_platforms s ON m.streaming_platform_id = s.id
+             LEFT JOIN user_ratings ur2 ON m.id = ur2.movie_id
+             WHERE ur.user_id = ?
+             GROUP BY m.id
+          """
+    params = (user_id,)
+    results = db.query(sql, params)
+
+    movies = []
+    for row in results:
+        movie_dict = dict(row)
+        # Create category object for template compatibility
+        if movie_dict.get('category_name'):
+            movie_dict['category'] = {'name': movie_dict['category_name']}
+        # Create platform object for template compatibility
+        if movie_dict.get('platform_name'):
+            movie_dict['platform'] = {'name': movie_dict['platform_name']}
+        # Add favorite status
+        movie_dict['is_favorite'] = bool(movie_dict.get('user_favorite'))
+        # Use average rating for display
+        if movie_dict.get('average_rating'):
+            movie_dict['rating'] = round(float(movie_dict['average_rating']), 1)
+        movie_dict['user_watched'] = bool(movie_dict.get('user_watched'))
+
+        movies.append(movie_dict)
+
+    return movies
 
 
 def add_movie(user_id, movie):
