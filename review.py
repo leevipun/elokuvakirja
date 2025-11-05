@@ -29,3 +29,15 @@ def add_review(user_id, movie):
 
     db.execute(sql, params)
     return movie["id"]
+
+def get_reviews_by_user(user_id):
+    sql = """SELECT ur.rating, ur.watched, ur.watch_date, ur.watched_with, ur.favorite,
+                    m.id AS movie_id, m.title, m.duration
+             FROM user_ratings ur
+             JOIN movies m ON ur.movie_id = m.id
+             WHERE ur.user_id = ?
+          """
+    params = (user_id,)
+    reviews = db.query(sql, params)
+    
+    return reviews

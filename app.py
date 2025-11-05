@@ -399,6 +399,38 @@ def edit(movie_id):
         flash(f"Error updating movie: {str(e)}", "error")
         return redirect(f"/edit/{movie_id}")
 
+@app.route('/dashboard')
+def dashboard():
+    if "username" not in session:
+        return redirect("/login")
+
+    user = users.get_user(session["username"])
+    if not user:
+        return redirect("/login")
+
+    user_movies = movies.get_movies(user["id"])
+    user_reviews = review.get_reviews_by_user(user["id"])
+    total_movies = len(user_movies)
+    favorite_movies = [movie for movie in user_movies if movie.get("favorite")]
+    total_wathch_time = round(sum(movie.get("duration", 0) for movie in user_movies if movie.get("duration")) / 60, 1)
+    total_favorites = len(favorite_movies)
+    total_reviews = len(user_reviews)
+    member_since = (datetime.now() - user["created_at"]).days  # Assuming user["created_at"] is a datetime object
+    
+
+    user_data = {
+        "total_movies": total_movies,
+        "total_favorites": total_favorites,
+        "total_wathch_time": total_wathch_time,
+        "total_reviews": total_reviews,
+        "member_since": member_since,
+        "movies": user_movies,
+        "reviews": user_reviews
+    }
+
+    return render_template('user-dashboard.html', user_data=user_data)
+
+
 @app.route('/logout')
 def logout():
     session.clear()
