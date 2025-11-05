@@ -42,6 +42,7 @@
                         <label for="password">Password</label>
                         <input type="password" id="password" name="password" required />
                     </div>
+                    <input type="hidden" name="csrf_token" value="{{ session.csrf_token }}" required />
                     <button type="submit" class="btn-primary">Login</button>
                     <div class="form-footer">
                         <p>

@@ -405,3 +405,35 @@ def update_movie(user_id, movie):
 
     db.execute(sql, params)
     return movie["id"]
+
+def delete_movie(user_id, movie_id):
+    """Delete a user's rating for a movie. If no other users have rated it, delete the movie."""
+    if not user_id:
+        return "User ID is required."
+
+    # First, check if the user owns this movie or has rated it
+    sql_check = """SELECT m.owner_id FROM movies m
+                   LEFT JOIN user_ratings ur ON m.id = ur.movie_id AND ur.user_id = ?
+                   WHERE m.id = ?"""
+    result = db.query(sql_check, [user_id, movie_id])
+    
+    if not result:
+        return "Movie not found."
+    
+    movie_owner_id = result[0]['owner_id']
+    
+    # If user is the owner, they can delete it
+    if movie_owner_id == user_id:
+        # Delete all user ratings for this movie
+        sql_delete_ratings = "DELETE FROM user_ratings WHERE movie_id = ?"
+        db.execute(sql_delete_ratings, [movie_id])
+        
+        # Delete the movie
+        sql_delete_movie = "DELETE FROM movies WHERE id = ?"
+        db.execute(sql_delete_movie, [movie_id])
+    else:
+        # Just delete the user's rating
+        sql_delete_rating = "DELETE FROM user_ratings WHERE user_id = ? AND movie_id = ?"
+        db.execute(sql_delete_rating, [user_id, movie_id])
+    
+    return movie_id

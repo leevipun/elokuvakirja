@@ -59,14 +59,17 @@
                 <h2>🎬 Recently Added</h2>
                 <div class="recent-movies">
                     {% for movie in user_data.movies %}
+                    
                     <div class="movie-list-item">
                         <div class="movie-icon">🎭</div>
                         <div class="movie-list-info">
+                            <a href="/movie/{{ movie.id }}">
                             <div class="movie-list-title">{{movie.title}}</div>
                             <div class="movie-list-meta">
                                 <span>{{ movie.watch_date }}</span>
                                 <span class="movie-list-rating">⭐ {{ movie.rating }}/5</span>
                             </div>
+                            </a>
                         </div>
                     </div>
                     {% endfor %}

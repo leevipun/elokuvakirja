@@ -36,6 +36,7 @@
                         <label for="password_conf">Confirm Password</label>
                         <input type="password" id="password_conf" name="password_conf" required />
                     </div>
+                    <input type="hidden" name="csrf_token" value="{{ session.csrf_token }}" required />
                     <button type="submit" class="btn-primary">Create Account</button>
                     <div class="form-footer">
                         <p>

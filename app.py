@@ -45,7 +45,7 @@ def index():
             user_id = user["id"]
             session["user_id"] = user_id
     
-    user_movies = movies.get_movies(user_id)
+    user_movies = movies.get_movies()
     return render_template('index.html', movies=user_movies, csrf_token=session.get("csrf_token"))
 
 @app.route('/login', methods=["GET", "POST"])
@@ -53,11 +53,15 @@ def login():
     if request.method == "GET":
         session["csrf_token"] = secrets.token_hex(16)  # Generate CSRF token for login page
         get_flashed_messages()
-        return render_template('login.html')
+        return render_template('login.html', csrf_token=session.get("csrf_token"))
+
+    # Verify CSRF token
+    csrf_token = request.form.get("csrf_token")
+    if not csrf_token or csrf_token != session.get("csrf_token"):
+        abort(403, description="CSRF validation failed ❌")
 
     username = request.form.get("username", "").strip()
     password = request.form.get("password", "")
-
 
     if not username or not password:
         flash("Please enter both username and password")
@@ -81,7 +85,13 @@ def login():
 @app.route('/register', methods=["GET", "POST"])
 def register():
     if request.method == "GET":
-        return render_template('register.html')
+        session["csrf_token"] = secrets.token_hex(16)  # Generate CSRF token for register page
+        return render_template('register.html', csrf_token=session.get("csrf_token"))
+
+    # Verify CSRF token
+    csrf_token = request.form.get("csrf_token")
+    if not csrf_token or csrf_token != session.get("csrf_token"):
+        abort(403, description="CSRF validation failed ❌")
 
     username = request.form.get("username", "").strip()
     password = request.form.get("password", "")
@@ -100,6 +110,7 @@ def register():
         user = users.get_user(username)  # Then get the user
         session["username"] = username
         session["user_id"] = user["id"]
+        session["csrf_token"] = secrets.token_hex(16)
         return redirect("/")
     except sqlite3.IntegrityError:
         flash("Username already exists")
@@ -229,11 +240,17 @@ def add_review(movie_id):
     if "username" not in session:
         return redirect("/login")
     if request.method == "GET":
+        session["csrf_token"] = secrets.token_hex(16)
         movie = movies.get_movie_by_id(movie_id)
         if not movie:
             flash("Movie not found")
             return redirect("/")
-        return render_template("edit.html", movie=movie)
+        return render_template("edit.html", movie=movie, csrf_token=session.get("csrf_token"))
+
+    # Verify CSRF token
+    csrf_token = request.form.get("csrf_token")
+    if not csrf_token or csrf_token != session.get("csrf_token"):
+        abort(403, description="CSRF validation failed ❌")
 
     user = users.get_user(session["username"])
 
@@ -398,6 +415,34 @@ def edit(movie_id):
     except Exception as e:
         flash(f"Error updating movie: {str(e)}", "error")
         return redirect(f"/edit/{movie_id}")
+
+@app.route('/delete/<int:movie_id>', methods=["POST"])
+def delete(movie_id):
+    if "username" not in session:
+        return redirect("/login")
+    
+    user = users.get_user(session["username"])
+    if not user:
+        return redirect("/login")
+
+    # Verify CSRF token
+    csrf_token = request.form.get("csrf_token")
+    if not csrf_token or csrf_token != session.get("csrf_token"):
+        abort(403, description="CSRF validation failed ❌")
+
+    # Check if user owns or has rated the movie
+    movie = movies.get_movie_by_id(movie_id, user["id"])
+    if not movie:
+        flash("Movie not found")
+        return redirect("/")
+
+    try:
+        movies.delete_movie(user["id"], movie_id)
+        flash("Movie deleted successfully!", "success")
+        return redirect("/")
+    except Exception as e:
+        flash(f"Error deleting movie: {str(e)}", "error")
+        return redirect(f"/movie/{movie_id}")
 
 @app.route('/dashboard')
 def dashboard():
