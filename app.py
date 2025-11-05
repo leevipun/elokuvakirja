@@ -415,7 +415,11 @@ def dashboard():
     total_wathch_time = round(sum(movie.get("duration", 0) for movie in user_movies if movie.get("duration")) / 60, 1)
     total_favorites = len(favorite_movies)
     total_reviews = len(user_reviews)
-    member_since = (datetime.now() - user["created_at"]).days  # Assuming user["created_at"] is a datetime object
+    avg_rating = round(sum(review["rating"] for review in user_reviews if review["rating"]) / total_reviews, 2) if total_reviews > 0 else 0
+    
+    # Convert created_at string to datetime object
+    created_at = datetime.fromisoformat(user["created_at"])
+    member_since = (datetime.now() - created_at).days
     
 
     user_data = {
@@ -423,6 +427,7 @@ def dashboard():
         "total_favorites": total_favorites,
         "total_wathch_time": total_wathch_time,
         "total_reviews": total_reviews,
+        "avg_rating": avg_rating,
         "member_since": member_since,
         "movies": user_movies,
         "reviews": user_reviews

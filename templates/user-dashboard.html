@@ -37,7 +37,7 @@
                     <span class="stat-label">Movies Watched</span>
                 </div>
                 <div class="stat-card">
-                    <span class="stat-value">4.2</span>
+                    <span class="stat-value">{{ user_data.avg_rating }}</span>
                     <span class="stat-label">Avg Rating</span>
                 </div>
                 <div class="stat-card">
@@ -55,51 +55,21 @@
         <div class="dashboard-main">
             <!-- Recent Movies -->
             <div class="dashboard-card">
+
                 <h2>🎬 Recently Added</h2>
                 <div class="recent-movies">
+                    {% for movie in user_data.movies %}
                     <div class="movie-list-item">
                         <div class="movie-icon">🎭</div>
                         <div class="movie-list-info">
-                            <div class="movie-list-title">The Shawshank Redemption</div>
+                            <div class="movie-list-title">{{movie.title}}</div>
                             <div class="movie-list-meta">
-                                <span>2024-01-15</span>
-                                <span class="movie-list-rating">⭐ 4.8/5</span>
+                                <span>{{ movie.watch_date }}</span>
+                                <span class="movie-list-rating">⭐ {{ movie.rating }}/5</span>
                             </div>
                         </div>
                     </div>
-
-                    <div class="movie-list-item">
-                        <div class="movie-icon">🎪</div>
-                        <div class="movie-list-info">
-                            <div class="movie-list-title">Inception</div>
-                            <div class="movie-list-meta">
-                                <span>2024-01-10</span>
-                                <span class="movie-list-rating">⭐ 4.5/5</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="movie-list-item">
-                        <div class="movie-icon">🎬</div>
-                        <div class="movie-list-info">
-                            <div class="movie-list-title">Interstellar</div>
-                            <div class="movie-list-meta">
-                                <span>2024-01-05</span>
-                                <span class="movie-list-rating">⭐ 4.9/5</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="movie-list-item">
-                        <div class="movie-icon">🎞️</div>
-                        <div class="movie-list-info">
-                            <div class="movie-list-title">The Dark Knight</div>
-                            <div class="movie-list-meta">
-                                <span>2023-12-28</span>
-                                <span class="movie-list-rating">⭐ 4.7/5</span>
-                            </div>
-                        </div>
-                    </div>
+                    {% endfor %}
                 </div>
             </div>
 
@@ -128,73 +98,6 @@
                         <span class="stats-item-value">{{ user_data.member_since }}</span>
                     </div>
                 </div>
-            </div>
-        </div>
-
-        <!-- Preferences Section -->
-        <div class="preferences-section">
-            <h2>⚙️ Preferences & Settings</h2>
-
-            <div class="preferences-grid">
-                <!-- Favorite Genres -->
-                <div class="preference-card">
-                    <h3>🎬 Favorite Genres</h3>
-                    <div class="favorite-genres">
-                        <div class="genre-tag">Action</div>
-                        <div class="genre-tag">Sci-Fi</div>
-                        <div class="genre-tag">Drama</div>
-                        <div class="genre-tag">Thriller</div>
-                    </div>
-                </div>
-
-                <!-- Viewing Preferences -->
-                <div class="preference-card">
-                    <h3>📺 Viewing Preferences</h3>
-                    <div class="preference-item">
-                        <input type="checkbox" id="pref1" class="preference-checkbox" checked />
-                        <label for="pref1" class="preference-label">Show Recommended</label>
-                    </div>
-                    <div class="preference-item">
-                        <input type="checkbox" id="pref2" class="preference-checkbox" checked />
-                        <label for="pref2" class="preference-label">Notify New Releases</label>
-                    </div>
-                    <div class="preference-item">
-                        <input type="checkbox" id="pref3" class="preference-checkbox" />
-                        <label for="pref3" class="preference-label">Dark Mode</label>
-                    </div>
-                    <div class="preference-item">
-                        <input type="checkbox" id="pref4" class="preference-checkbox" checked />
-                        <label for="pref4" class="preference-label">Display Ratings</label>
-                    </div>
-                </div>
-
-                <!-- Favorite Platforms -->
-                <div class="preference-card">
-                    <h3>📱 Favorite Platforms</h3>
-                    <div class="preference-item">
-                        <input type="checkbox" id="platform1" class="preference-checkbox" checked />
-                        <label for="platform1" class="preference-label">Netflix</label>
-                    </div>
-                    <div class="preference-item">
-                        <input type="checkbox" id="platform2" class="preference-checkbox" checked />
-                        <label for="platform2" class="preference-label">HBO Max</label>
-                    </div>
-                    <div class="preference-item">
-                        <input type="checkbox" id="platform3" class="preference-checkbox" checked />
-                        <label for="platform3" class="preference-label">Amazon Prime</label>
-                    </div>
-                    <div class="preference-item">
-                        <input type="checkbox" id="platform4" class="preference-checkbox" />
-                        <label for="platform4" class="preference-label">Disney+</label>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Action Buttons -->
-            <div class="action-buttons">
-                <a href="/edit-profile" class="btn-dashboard btn-edit-profile">✏️ Edit Profile</a>
-                <a href="/settings" class="btn-dashboard btn-edit-profile">⚙️ Settings</a>
-                <a href="/logout" class="btn-dashboard btn-logout">🚪 Logout</a>
             </div>
         </div>
     </div>

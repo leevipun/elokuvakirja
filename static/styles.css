@@ -1495,7 +1495,6 @@ form:not(.add-movie-form) .form-group {
 
 .movie-list-item:hover {
     background: #f0f4ff;
-    transform: translateX(4px);
 }
 
 .movie-list-item:last-child {
