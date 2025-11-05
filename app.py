@@ -44,7 +44,7 @@ def index():
         if user:
             user_id = user["id"]
             session["user_id"] = user_id
-    
+
     user_movies = movies.get_movies()
     return render_template('index.html', movies=user_movies, csrf_token=session.get("csrf_token"))
 
@@ -265,7 +265,7 @@ def add_review(movie_id):
         "review": request.form.get("review", "").strip() or None,
         "favorite": bool(request.form.get("favorite")),
         "rewatchable": bool(request.form.get("rewatchable"))
-    }    
+    }
 
     try:
         review.add_review(user["id"], movie_data)
@@ -310,7 +310,7 @@ def search():
 def edit(movie_id):
     if "username" not in session:
         return redirect("/login")
-    
+
     user = users.get_user(session["username"])
     if not user:
         return redirect("/login")
@@ -420,7 +420,7 @@ def edit(movie_id):
 def delete(movie_id):
     if "username" not in session:
         return redirect("/login")
-    
+
     user = users.get_user(session["username"])
     if not user:
         return redirect("/login")
@@ -461,11 +461,10 @@ def dashboard():
     total_favorites = len(favorite_movies)
     total_reviews = len(user_reviews)
     avg_rating = round(sum(review["rating"] for review in user_reviews if review["rating"]) / total_reviews, 2) if total_reviews > 0 else 0
-    
+
     # Convert created_at string to datetime object
     created_at = datetime.fromisoformat(user["created_at"])
     member_since = (datetime.now() - created_at).days
-    
 
     user_data = {
         "total_movies": total_movies,
@@ -479,7 +478,6 @@ def dashboard():
     }
 
     return render_template('user-dashboard.html', user_data=user_data)
-
 
 @app.route('/logout')
 def logout():

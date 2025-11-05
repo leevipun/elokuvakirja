@@ -148,7 +148,7 @@ def add_movie(user_id, movie):
     # First, check if movie already exists
     sql_check = "SELECT id FROM movies WHERE LOWER(title) = LOWER(?)"
     result = db.query(sql_check, [movie["title"]])
-    
+
     if result:
         # Movie exists, just add user rating
         movie_id = result[0]['id']
@@ -185,13 +185,13 @@ def add_movie(user_id, movie):
     sql_rating = """INSERT OR REPLACE INTO user_ratings
                 (user_id, movie_id, rating, watched, watch_date, watched_with, favorite)
                 VALUES (?, ?, ?, ?, ?, ?, ?)"""
-    
+
     rating_value = movie.get("rating")
     if rating_value:
         # Convert from 10-point to 5-point scale if needed
         if float(rating_value) > 5:
             rating_value = float(rating_value) / 2
-    
+
     params_rating = (
         user_id,
         movie_id,
@@ -209,7 +209,7 @@ def search_movies(user_id=None, filter_options=None):
     """Search movies based on various criteria"""
     if filter_options is None:
         filter_options = {}
-    
+
     # Base SQL query
     if user_id:
         # Get user's rated movies with their ratings
@@ -259,11 +259,11 @@ def search_movies(user_id=None, filter_options=None):
     rating = filter_options.get("rating", "").strip()
     sort_by = filter_options.get("sort_by", "relevance").strip()
 
-    # Add WHERE clause if needed
-    if user_id or query or genre or year or platform or rating:
+    has_filters = any([query, genre, year, platform, rating])
+    if user_id or has_filters:
         if not user_id:
             sql += " WHERE 1=1"
-        
+
         # Add search conditions
         if query:
             sql += """ AND (
@@ -416,18 +416,18 @@ def delete_movie(user_id, movie_id):
                    LEFT JOIN user_ratings ur ON m.id = ur.movie_id AND ur.user_id = ?
                    WHERE m.id = ?"""
     result = db.query(sql_check, [user_id, movie_id])
-    
+
     if not result:
         return "Movie not found."
-    
+
     movie_owner_id = result[0]['owner_id']
-    
+
     # If user is the owner, they can delete it
     if movie_owner_id == user_id:
         # Delete all user ratings for this movie
         sql_delete_ratings = "DELETE FROM user_ratings WHERE movie_id = ?"
         db.execute(sql_delete_ratings, [movie_id])
-        
+
         # Delete the movie
         sql_delete_movie = "DELETE FROM movies WHERE id = ?"
         db.execute(sql_delete_movie, [movie_id])
@@ -435,5 +435,5 @@ def delete_movie(user_id, movie_id):
         # Just delete the user's rating
         sql_delete_rating = "DELETE FROM user_ratings WHERE user_id = ? AND movie_id = ?"
         db.execute(sql_delete_rating, [user_id, movie_id])
-    
+
     return movie_id

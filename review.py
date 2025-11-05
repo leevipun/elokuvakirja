@@ -39,5 +39,5 @@ def get_reviews_by_user(user_id):
           """
     params = (user_id,)
     reviews = db.query(sql, params)
-    
+
     return reviews
