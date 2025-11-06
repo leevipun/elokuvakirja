@@ -99,26 +99,28 @@ def get_movie_by_id(movie_id, user_id=None):
     return movie
 
 def get_movies_by_user(user_id):
-    sql = """SELECT m.*,
-                    c.name AS category_name,
-                    d.name AS director_name,
-                    s.name AS platform_name,
-                    ur.rating AS user_rating,
-                    ur.watched AS user_watched,
-                    ur.favorite AS user_favorite,
-                    AVG(CAST(ur2.rating AS FLOAT)) AS average_rating,
-                    COUNT(ur2.id) AS total_ratings
-             FROM user_ratings ur
-             JOIN movies m ON ur.movie_id = m.id
-             LEFT JOIN categories c ON m.category_id = c.id
-             LEFT JOIN directors d ON m.director_id = d.id
-             LEFT JOIN streaming_platforms s ON m.streaming_platform_id = s.id
-             LEFT JOIN user_ratings ur2 ON m.id = ur2.movie_id
-             WHERE ur.user_id = ?
-             GROUP BY m.id
-          """
-    params = (user_id,)
-    results = db.query(sql, params)
+    sql = """
+        SELECT DISTINCT m.*,
+               c.name AS category_name,
+               d.name AS director_name,
+               s.name AS platform_name,
+               ur.rating AS user_rating,
+               ur.watched AS user_watched,
+               ur.favorite AS user_favorite,
+               AVG(CAST(ur2.rating AS FLOAT)) AS average_rating,
+               COUNT(ur2.id) AS total_ratings
+        FROM movies m
+        LEFT JOIN user_ratings ur 
+               ON m.id = ur.movie_id AND ur.user_id = ?
+        LEFT JOIN categories c ON m.category_id = c.id
+        LEFT JOIN directors d ON m.director_id = d.id
+        LEFT JOIN streaming_platforms s ON m.streaming_platform_id = s.id
+        LEFT JOIN user_ratings ur2 ON m.id = ur2.movie_id
+        WHERE m.owner_id = ? OR ur.user_id = ?
+        GROUP BY m.id
+        ORDER BY m.created_at DESC
+    """
+    results = db.query(sql, [user_id, user_id, user_id])
 
     movies = []
     for row in results:
@@ -373,6 +375,38 @@ def search_movies(user_id=None, filter_options=None):
         movies.append(movie_dict)
 
     return movies
+
+def update_movie_owner(user_id, movie):
+    if not user_id:
+        return "User ID is required."
+
+    # Update movie details owned by the user
+    sql = """UPDATE movies
+             SET title = ?,
+                 year = ?,
+                 duration = ?,
+                 category_id = ?,
+                 streaming_platform_id = ?,
+                 director_id = ?,
+                 review = ?,
+                 rewatchable = ?
+             WHERE id = ? AND owner_id = ?"""
+
+    params = (
+        movie["title"],
+        movie["year"] if movie["year"] else None,
+        movie["duration"] if movie["duration"] else None,
+        movie.get("category_id") if movie.get("category_id") else None,
+        movie.get("streaming_platform_id") if movie.get("streaming_platform_id") else None,
+        movie.get("director_id") if movie.get("director_id") else None,
+        movie["review"] if movie["review"] else None,
+        bool(movie.get("rewatchable", False)),
+        movie["id"],
+        user_id
+    )
+
+    db.execute(sql, params)
+    return movie["id"]
 
 def update_movie(user_id, movie):
     if not user_id:
