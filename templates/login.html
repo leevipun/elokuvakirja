@@ -8,15 +8,22 @@
     </head>
 
     <body>
-        <nav class="navbar">
-            <a href="/" class="navbutton">All Movies</a>
-            <a href="/add" class="navbutton active">Add Movie</a>
-            {% if session.username %}
-            <a href="/logout" class="navbutton">Logout</a>
-            {% else %}
-            <a href="/login" class="navbutton">Login</a>
-            {% endif %}
-        </nav>
+    <nav class="navbar">
+        <a href="/" class="navbutton">All Movies</a>
+        <a href="/add" class="navbutton">Add Movie</a>
+        <a href="/search" class="navbutton">Search</a>
+        {% if session.username %}
+        <div class="dropdown">
+            <button class="dropbtn">{{ session.username }}</button>
+            <div class="dropdown-content">
+                <a href="/dashboard">Dashboard</a>
+                <a href="/logout">Logout</a>
+            </div>
+        </div>
+        {% else %}
+        <a href="/login" class="navbutton active">Login</a>
+        {% endif %}
+    </nav>
 
         <div class="loginFormDiv">
             <main>
