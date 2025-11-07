@@ -9,10 +9,16 @@
     <body>
         <nav class="navbar">
             <a href="/" class="navbutton">All Movies</a>
-            {% if session.username %}
             <a href="/add" class="navbutton">Add Movie</a>
             <a href="/search" class="navbutton">Search</a>
-            <a href="/logout" class="navbutton">Logout</a>
+            {% if session.username %}
+            <div class="dropdown">
+                <button class="dropbtn">{{ session.username }}</button>
+                <div class="dropdown-content">
+                    <a href="/dashboard">Dashboard</a>
+                    <a href="/logout">Logout</a>
+                </div>
+            </div>
             {% else %}
             <a href="/login" class="navbutton">Login</a>
             {% endif %}
@@ -76,7 +82,14 @@
                     <button class="btn-edit" onclick="window.location.href='/edit/{{ movie.id }}'">
                         Edit My Rating
                     </button>
-
+                    {% if movie.owner_id == session.get('user_id') %}
+                    <form method="POST" action="/delete/{{ movie.id }}">
+                        <input type="hidden" name="csrf_token" value="{{ session.get('csrf_token') }}">
+                        <button type="submit" class="btn-delete" onclick="return confirm('Are you sure you want to delete this movie?')">
+                            Delete Movie
+                        </button>
+                    </form>
+                    {% endif %}
                     {% else %}
                     <button class="btn-add" onclick="window.location.href='/add-review/{{ movie.id }}'">
                         Add My Review

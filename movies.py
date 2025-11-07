@@ -1,45 +1,22 @@
 import db
 
-def get_movies(user_id=None):
-    if user_id:
-        sql = """
-        SELECT m.*,
-               c.name AS category_name,
-               d.name AS director_name,
-               s.name AS platform_name,
-               ur.rating AS user_rating,
-               ur.watched AS user_watched,
-               ur.favorite AS user_favorite,
-               AVG(CAST(ur2.rating AS FLOAT)) AS average_rating,
-               COUNT(ur2.id) AS total_ratings
-        FROM movies m
-        LEFT JOIN categories c ON m.category_id = c.id
-        LEFT JOIN directors d ON m.director_id = d.id
-        LEFT JOIN streaming_platforms s ON m.streaming_platform_id = s.id
-        LEFT JOIN user_ratings ur ON m.id = ur.movie_id AND ur.user_id = ?
-        LEFT JOIN user_ratings ur2 ON m.id = ur2.movie_id
-        WHERE ur.id IS NOT NULL
-        GROUP BY m.id
-        ORDER BY ur.created_at DESC
-        """
-        results = db.query(sql, [user_id])
-    else:
-        sql = """
-        SELECT m.*,
-               c.name AS category_name,
-               d.name AS director_name,
-               s.name AS platform_name,
-               AVG(CAST(ur.rating AS FLOAT)) AS average_rating,
-               COUNT(ur.id) AS total_ratings
-        FROM movies m
-        LEFT JOIN categories c ON m.category_id = c.id
-        LEFT JOIN directors d ON m.director_id = d.id
-        LEFT JOIN streaming_platforms s ON m.streaming_platform_id = s.id
-        LEFT JOIN user_ratings ur ON m.id = ur.movie_id
-        GROUP BY m.id
-        ORDER BY m.created_at DESC
-        """
-        results = db.query(sql)
+def get_movies():
+    sql = """
+    SELECT m.*,
+            c.name AS category_name,
+            d.name AS director_name,
+            s.name AS platform_name,
+            AVG(CAST(ur.rating AS FLOAT)) AS average_rating,
+            COUNT(ur.id) AS total_ratings
+    FROM movies m
+    LEFT JOIN categories c ON m.category_id = c.id
+    LEFT JOIN directors d ON m.director_id = d.id
+    LEFT JOIN streaming_platforms s ON m.streaming_platform_id = s.id
+    LEFT JOIN user_ratings ur ON m.id = ur.movie_id
+    GROUP BY m.id
+    ORDER BY m.created_at DESC
+    """
+    results = db.query(sql)
 
     # Convert to list of dictionaries for easier handling
     movies = []
@@ -121,6 +98,50 @@ def get_movie_by_id(movie_id, user_id=None):
 
     return movie
 
+def get_movies_by_user(user_id):
+    sql = """
+        SELECT DISTINCT m.*,
+               c.name AS category_name,
+               d.name AS director_name,
+               s.name AS platform_name,
+               ur.rating AS user_rating,
+               ur.watched AS user_watched,
+               ur.favorite AS user_favorite,
+               AVG(CAST(ur2.rating AS FLOAT)) AS average_rating,
+               COUNT(ur2.id) AS total_ratings
+        FROM movies m
+        LEFT JOIN user_ratings ur 
+               ON m.id = ur.movie_id AND ur.user_id = ?
+        LEFT JOIN categories c ON m.category_id = c.id
+        LEFT JOIN directors d ON m.director_id = d.id
+        LEFT JOIN streaming_platforms s ON m.streaming_platform_id = s.id
+        LEFT JOIN user_ratings ur2 ON m.id = ur2.movie_id
+        WHERE m.owner_id = ? OR ur.user_id = ?
+        GROUP BY m.id
+        ORDER BY m.created_at DESC
+    """
+    results = db.query(sql, [user_id, user_id, user_id])
+
+    movies = []
+    for row in results:
+        movie_dict = dict(row)
+        # Create category object for template compatibility
+        if movie_dict.get('category_name'):
+            movie_dict['category'] = {'name': movie_dict['category_name']}
+        # Create platform object for template compatibility
+        if movie_dict.get('platform_name'):
+            movie_dict['platform'] = {'name': movie_dict['platform_name']}
+        # Add favorite status
+        movie_dict['is_favorite'] = bool(movie_dict.get('user_favorite'))
+        # Use average rating for display
+        if movie_dict.get('average_rating'):
+            movie_dict['rating'] = round(float(movie_dict['average_rating']), 1)
+        movie_dict['user_watched'] = bool(movie_dict.get('user_watched'))
+
+        movies.append(movie_dict)
+
+    return movies
+
 
 def add_movie(user_id, movie):
     if not user_id:
@@ -129,7 +150,7 @@ def add_movie(user_id, movie):
     # First, check if movie already exists
     sql_check = "SELECT id FROM movies WHERE LOWER(title) = LOWER(?)"
     result = db.query(sql_check, [movie["title"]])
-    
+
     if result:
         # Movie exists, just add user rating
         movie_id = result[0]['id']
@@ -166,13 +187,13 @@ def add_movie(user_id, movie):
     sql_rating = """INSERT OR REPLACE INTO user_ratings
                 (user_id, movie_id, rating, watched, watch_date, watched_with, favorite)
                 VALUES (?, ?, ?, ?, ?, ?, ?)"""
-    
+
     rating_value = movie.get("rating")
     if rating_value:
         # Convert from 10-point to 5-point scale if needed
         if float(rating_value) > 5:
             rating_value = float(rating_value) / 2
-    
+
     params_rating = (
         user_id,
         movie_id,
@@ -190,7 +211,7 @@ def search_movies(user_id=None, filter_options=None):
     """Search movies based on various criteria"""
     if filter_options is None:
         filter_options = {}
-    
+
     # Base SQL query
     if user_id:
         # Get user's rated movies with their ratings
@@ -240,11 +261,11 @@ def search_movies(user_id=None, filter_options=None):
     rating = filter_options.get("rating", "").strip()
     sort_by = filter_options.get("sort_by", "relevance").strip()
 
-    # Add WHERE clause if needed
-    if user_id or query or genre or year or platform or rating:
+    has_filters = any([query, genre, year, platform, rating])
+    if user_id or has_filters:
         if not user_id:
             sql += " WHERE 1=1"
-        
+
         # Add search conditions
         if query:
             sql += """ AND (
@@ -355,6 +376,38 @@ def search_movies(user_id=None, filter_options=None):
 
     return movies
 
+def update_movie_owner(user_id, movie):
+    if not user_id:
+        return "User ID is required."
+
+    # Update movie details owned by the user
+    sql = """UPDATE movies
+             SET title = ?,
+                 year = ?,
+                 duration = ?,
+                 category_id = ?,
+                 streaming_platform_id = ?,
+                 director_id = ?,
+                 review = ?,
+                 rewatchable = ?
+             WHERE id = ? AND owner_id = ?"""
+
+    params = (
+        movie["title"],
+        movie["year"] if movie["year"] else None,
+        movie["duration"] if movie["duration"] else None,
+        movie.get("category_id") if movie.get("category_id") else None,
+        movie.get("streaming_platform_id") if movie.get("streaming_platform_id") else None,
+        movie.get("director_id") if movie.get("director_id") else None,
+        movie["review"] if movie["review"] else None,
+        bool(movie.get("rewatchable", False)),
+        movie["id"],
+        user_id
+    )
+
+    db.execute(sql, params)
+    return movie["id"]
+
 def update_movie(user_id, movie):
     if not user_id:
         return "User ID is required."
@@ -386,3 +439,35 @@ def update_movie(user_id, movie):
 
     db.execute(sql, params)
     return movie["id"]
+
+def delete_movie(user_id, movie_id):
+    """Delete a user's rating for a movie. If no other users have rated it, delete the movie."""
+    if not user_id:
+        return "User ID is required."
+
+    # First, check if the user owns this movie or has rated it
+    sql_check = """SELECT m.owner_id FROM movies m
+                   LEFT JOIN user_ratings ur ON m.id = ur.movie_id AND ur.user_id = ?
+                   WHERE m.id = ?"""
+    result = db.query(sql_check, [user_id, movie_id])
+
+    if not result:
+        return "Movie not found."
+
+    movie_owner_id = result[0]['owner_id']
+
+    # If user is the owner, they can delete it
+    if movie_owner_id == user_id:
+        # Delete all user ratings for this movie
+        sql_delete_ratings = "DELETE FROM user_ratings WHERE movie_id = ?"
+        db.execute(sql_delete_ratings, [movie_id])
+
+        # Delete the movie
+        sql_delete_movie = "DELETE FROM movies WHERE id = ?"
+        db.execute(sql_delete_movie, [movie_id])
+    else:
+        # Just delete the user's rating
+        sql_delete_rating = "DELETE FROM user_ratings WHERE user_id = ? AND movie_id = ?"
+        db.execute(sql_delete_rating, [user_id, movie_id])
+
+    return movie_id

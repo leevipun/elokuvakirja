@@ -44,8 +44,8 @@ def index():
         if user:
             user_id = user["id"]
             session["user_id"] = user_id
-    
-    user_movies = movies.get_movies(user_id)
+
+    user_movies = movies.get_movies()
     return render_template('index.html', movies=user_movies, csrf_token=session.get("csrf_token"))
 
 @app.route('/login', methods=["GET", "POST"])
@@ -53,11 +53,15 @@ def login():
     if request.method == "GET":
         session["csrf_token"] = secrets.token_hex(16)  # Generate CSRF token for login page
         get_flashed_messages()
-        return render_template('login.html')
+        return render_template('login.html', csrf_token=session.get("csrf_token"))
+
+    # Verify CSRF token
+    csrf_token = request.form.get("csrf_token")
+    if not csrf_token or csrf_token != session.get("csrf_token"):
+        abort(403, description="CSRF validation failed ❌")
 
     username = request.form.get("username", "").strip()
     password = request.form.get("password", "")
-
 
     if not username or not password:
         flash("Please enter both username and password")
@@ -81,7 +85,13 @@ def login():
 @app.route('/register', methods=["GET", "POST"])
 def register():
     if request.method == "GET":
-        return render_template('register.html')
+        session["csrf_token"] = secrets.token_hex(16)  # Generate CSRF token for register page
+        return render_template('register.html', csrf_token=session.get("csrf_token"))
+
+    # Verify CSRF token
+    csrf_token = request.form.get("csrf_token")
+    if not csrf_token or csrf_token != session.get("csrf_token"):
+        abort(403, description="CSRF validation failed ❌")
 
     username = request.form.get("username", "").strip()
     password = request.form.get("password", "")
@@ -100,6 +110,7 @@ def register():
         user = users.get_user(username)  # Then get the user
         session["username"] = username
         session["user_id"] = user["id"]
+        session["csrf_token"] = secrets.token_hex(16)
         return redirect("/")
     except sqlite3.IntegrityError:
         flash("Username already exists")
@@ -229,11 +240,17 @@ def add_review(movie_id):
     if "username" not in session:
         return redirect("/login")
     if request.method == "GET":
+        session["csrf_token"] = secrets.token_hex(16)
         movie = movies.get_movie_by_id(movie_id)
         if not movie:
             flash("Movie not found")
             return redirect("/")
-        return render_template("edit.html", movie=movie)
+        return render_template("edit.html", movie=movie, csrf_token=session.get("csrf_token"))
+
+    # Verify CSRF token
+    csrf_token = request.form.get("csrf_token")
+    if not csrf_token or csrf_token != session.get("csrf_token"):
+        abort(403, description="CSRF validation failed ❌")
 
     user = users.get_user(session["username"])
 
@@ -248,7 +265,7 @@ def add_review(movie_id):
         "review": request.form.get("review", "").strip() or None,
         "favorite": bool(request.form.get("favorite")),
         "rewatchable": bool(request.form.get("rewatchable"))
-    }    
+    }
 
     try:
         review.add_review(user["id"], movie_data)
@@ -293,18 +310,19 @@ def search():
 def edit(movie_id):
     if "username" not in session:
         return redirect("/login")
-    
+
     user = users.get_user(session["username"])
     if not user:
         return redirect("/login")
 
     if request.method == "GET":
+        session["csrf_token"] = secrets.token_hex(16)  # Generate CSRF token
         movie = movies.get_movie_by_id(movie_id, user["id"])
         if not movie:
             flash("Movie not found")
             return redirect("/")
         if movie["owner_id"] != user["id"]:
-            return render_template("edit.html", movie=movie)
+            return render_template("edit.html", movie=movie, csrf_token=session.get("csrf_token"))
         existing_categories = categories.get_categories() or []
         existing_platforms = platforms.get_platforms() or []
         existing_directors = directors.get_directors() or []
@@ -321,83 +339,155 @@ def edit(movie_id):
         flash("Movie not found")
         return redirect("/")
 
-    # Handle category selection or creation
-    category_id = None
-    selected_category = request.form.get("category")
-    new_category = request.form.get("new_category", "").strip()
+    # Check if user is the owner
+    is_owner = existing_movie["owner_id"] == user["id"]
 
-    if new_category:
-        # Create new category
+    # Helper function to handle category/platform/director selection
+    def get_entity_id(selected_value, new_value, add_func, get_func):
+        entity_id = None
+        if new_value:
+            try:
+                entity_id = add_func(new_value)
+            except sqlite3.IntegrityError:
+                entities = get_func()
+                for entity in entities:
+                    if entity['name'].lower() == new_value.lower():
+                        entity_id = entity['id']
+                        break
+        elif selected_value and selected_value != "":
+            entity_id = int(selected_value)
+        return entity_id
+
+    if is_owner:
+        # Owner is editing the movie details
+        category_id = get_entity_id(
+            request.form.get("category"),
+            request.form.get("new_category", "").strip(),
+            categories.add_category,
+            categories.get_categories
+        )
+
+        streaming_platform_id = get_entity_id(
+            request.form.get("streaming_platform"),
+            request.form.get("new_platform", "").strip(),
+            platforms.add_platform,
+            platforms.get_platforms
+        )
+
+        director_id = get_entity_id(
+            request.form.get("director"),
+            request.form.get("new_director", "").strip(),
+            directors.add_director,
+            directors.get_directors
+        )
+
+        # Prepare movie data for owner update (full edit)
+        movie_data = {
+            "id": movie_id,
+            "title": request.form.get("title", "").strip(),
+            "year": request.form.get("year") or None,
+            "duration": request.form.get("duration") or None,
+            "director_id": director_id,
+            "category_id": category_id,
+            "streaming_platform_id": streaming_platform_id,
+            "watch_date": request.form.get("watchDate") or None,
+            "rating": request.form.get("rating") or None,
+            "watched_with": request.form.get("watchedWith", "").strip() or None,
+            "review": request.form.get("review", "").strip() or None,
+            "favorite": bool(request.form.get("favorite")),
+            "rewatchable": bool(request.form.get("rewatchable"))
+        }
+
+
+
         try:
-            category_id = categories.add_category(new_category)
-        except sqlite3.IntegrityError:
-            # Category already exists, find it
-            existing_categories = categories.get_categories()
-            for cat in existing_categories:
-                if cat['name'].lower() == new_category.lower():
-                    category_id = cat['id']
-                    break
-    elif selected_category and selected_category != "":
-        category_id = int(selected_category)
+            movies.update_movie_owner(user["id"], movie_data)
+            flash("Movie updated successfully!", "success")
+            return redirect(f"/movie/{movie_id}")
+        except Exception as e:
+            flash(f"Error updating movie: {str(e)}", "error")
+            return redirect(f"/edit/{movie_id}")
+    else:
+        # Non-owner is adding a review/rating
+        movie_data = {
+            "id": movie_id,
+            "rating": request.form.get("rating") or None,
+            "watched_with": request.form.get("watchedWith", "").strip() or None,
+            "review": request.form.get("review", "").strip() or None,
+            "favorite": bool(request.form.get("favorite")),
+            "rewatchable": bool(request.form.get("rewatchable"))
+        }
 
-    # Handle platform selection or creation
-    streaming_platform_id = None
-    selected_platform = request.form.get("streaming_platform")
-    new_platform = request.form.get("new_platform", "").strip()
-
-    if new_platform:
         try:
-            streaming_platform_id = platforms.add_platform(new_platform)
-        except sqlite3.IntegrityError:
-            existing_platforms = platforms.get_platforms()
-            for platform in existing_platforms:
-                if platform['name'].lower() == new_platform.lower():
-                    streaming_platform_id = platform['id']
-                    break
-    elif selected_platform and selected_platform != "":
-        streaming_platform_id = int(selected_platform)
+            review.add_review(user["id"], movie_data)
+            flash("Review added successfully!", "success")
+            return redirect(f"/movie/{movie_id}")
+        except Exception as e:
+            flash(f"Error adding review: {str(e)}", "error")
+            return redirect(f"/edit/{movie_id}")
 
-    # Handle director selection or creation
-    director_id = None
-    selected_director = request.form.get("director")
-    new_director = request.form.get("new_director", "").strip()
+@app.route('/delete/<int:movie_id>', methods=["POST"])
+def delete(movie_id):
+    if "username" not in session:
+        return redirect("/login")
 
-    if new_director:
-        try:
-            director_id = directors.add_director(new_director)
-        except sqlite3.IntegrityError:
-            existing_directors = directors.get_directors()
-            for director in existing_directors:
-                if director['name'].lower() == new_director.lower():
-                    director_id = director['id']
-                    break
-    elif selected_director and selected_director != "":
-        director_id = int(selected_director)
+    user = users.get_user(session["username"])
+    if not user:
+        return redirect("/login")
 
-    # Prepare movie data for update
-    movie_data = {
-        "id": movie_id,
-        "title": request.form.get("title", "").strip(),
-        "year": request.form.get("year") or None,
-        "duration": request.form.get("duration") or None,
-        "director_id": director_id,
-        "category_id": category_id,
-        "streaming_platform_id": streaming_platform_id,
-        "watch_date": request.form.get("watchDate") or None,
-        "rating": request.form.get("rating") or None,
-        "watched_with": request.form.get("watchedWith", "").strip() or None,
-        "review": request.form.get("review", "").strip() or None,
-        "favorite": bool(request.form.get("favorite")),
-        "rewatchable": bool(request.form.get("rewatchable"))
-    }
+    # Verify CSRF token
+    csrf_token = request.form.get("csrf_token")
+    if not csrf_token or csrf_token != session.get("csrf_token"):
+        abort(403, description="CSRF validation failed ❌")
+
+    # Check if user owns or has rated the movie
+    movie = movies.get_movie_by_id(movie_id, user["id"])
+    if not movie:
+        flash("Movie not found")
+        return redirect("/")
 
     try:
-        movies.update_movie(user["id"], movie_data)
-        flash("Movie updated successfully!", "success")
-        return redirect(f"/movie/{movie_id}")
+        movies.delete_movie(user["id"], movie_id)
+        flash("Movie deleted successfully!", "success")
+        return redirect("/")
     except Exception as e:
-        flash(f"Error updating movie: {str(e)}", "error")
-        return redirect(f"/edit/{movie_id}")
+        flash(f"Error deleting movie: {str(e)}", "error")
+        return redirect(f"/movie/{movie_id}")
+
+@app.route('/dashboard')
+def dashboard():
+    if "username" not in session:
+        return redirect("/login")
+
+    user = users.get_user(session["username"])
+    if not user:
+        return redirect("/login")
+
+    user_movies = movies.get_movies_by_user(user["id"])
+    user_reviews = review.get_reviews_by_user(user["id"])
+    total_movies = len(user_movies)
+    favorite_movies = [movie for movie in user_movies if movie.get("favorite")]
+    total_wathch_time = round(sum(movie.get("duration", 0) for movie in user_movies if movie.get("duration")) / 60, 1)
+    total_favorites = len(favorite_movies)
+    total_reviews = len(user_reviews)
+    avg_rating = round(sum(review["rating"] for review in user_reviews if review["rating"]) / total_reviews, 2) if total_reviews > 0 else 0
+
+    # Convert created_at string to datetime object
+    created_at = datetime.fromisoformat(user["created_at"])
+    member_since = (datetime.now() - created_at).days
+
+    user_data = {
+        "total_movies": total_movies,
+        "total_favorites": total_favorites,
+        "total_wathch_time": total_wathch_time,
+        "total_reviews": total_reviews,
+        "avg_rating": avg_rating,
+        "member_since": member_since,
+        "movies": user_movies,
+        "reviews": user_reviews
+    }
+
+    return render_template('user-dashboard.html', user_data=user_data)
 
 @app.route('/logout')
 def logout():

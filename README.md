@@ -10,23 +10,37 @@ Käyttäjä pystyy valitsemaan elokuvalle yhden tai useamman luokittelun (esim. 
 
 Sovelluksen ideana on, että käyttäjät voivat lisätä katsomiaan elokuvia. Jokainen elokuva voidaan lisätä vain kerran. Jos elokuva on jo lisätty voi käyttäjä merkitä elokuvan katsotuksi ja arvostella sen. Vain elokuvan lisännyt käyttäjä voi poistaa kyseisen elokuvan. Elokuvasta näytetään tietoja mm arvostelujen keskiarvo kaikille käyttäjille. Käyttäjät voivat muokata osittain jo olemassa olevaa elokuvaan muun muassa lisätä ja poistaa "streaming platform" tietoja, jotta tämä tieto olisi aina ajantasalla uusille katselijoille.
 
-Sovelluksen asennus
+## Sovelluksen asennus
+
 Asenna flask-kirjasto:
 
+```
 $ pip install flask
+```
 
 Asenna load_dotenv-kirjasto:
-pip install load_dotenv
 
-Lisää tiedosto .env,
+```
+$ pip install load_dotenv
+```
 
-joka sisältää muuttujan SECRET_KEY ja sillä arvon
+Asenna pylint-kirjasto (koodin laadun tarkistamista varten):
+
+```
+$ pip install pylint
+```
+
+Lisää tiedosto .env, joka sisältää muuttujan SECRET_KEY ja sillä arvon
 
 Luo tietokannan taulut ja lisää alkutiedot:
 
+```
 $ sqlite3 database.db < schema.sql
 $ sqlite3 database.db < init.sql
+```
 
 Voit käynnistää sovelluksen näin:
 
+```
 $ flask run
+```
