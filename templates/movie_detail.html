@@ -83,7 +83,7 @@
                         Edit My Rating
                     </button>
                     {% if movie.owner_id == session.get('user_id') %}
-                    <form method="POST" action="/delete/{{ movie.id }}" style="display:inline;">
+                    <form method="POST" action="/delete/{{ movie.id }}">
                         <input type="hidden" name="csrf_token" value="{{ session.get('csrf_token') }}">
                         <button type="submit" class="btn-delete" onclick="return confirm('Are you sure you want to delete this movie?')">
                             Delete Movie

@@ -474,42 +474,48 @@ textarea {
     padding: 2rem;
 }
 
+.loginFormDiv main {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    max-width: 450px;
+    padding: 3rem;
+    border-radius: 20px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
 form:not(.add-movie-form) {
     display: flex;
     flex-direction: column;
     gap: 1.5rem;
-    background: white;
-    padding: 2rem;
-    border-radius: 12px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-    max-width: 400px;
-    width: 100%;
 }
 
 form:not(.add-movie-form) .form-group {
-    margin-bottom: 1rem;
+    margin-bottom: 0;
 }
 
 .form-footer {
     text-align: center;
-    margin-top: 1rem;
-    padding-top: 1rem;
-    border-top: 1px solid #e1e5e9;
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 2px solid #e1e5e9;
 }
 
 .form-footer p {
     margin: 0;
     color: #666;
-    font-size: 0.9rem;
+    font-size: 0.95rem;
 }
 
 .form-footer a {
-    color: #007bff;
+    color: #667eea;
     text-decoration: none;
-    font-weight: 500;
+    font-weight: 600;
+    transition: all 0.3s ease;
 }
 
 .form-footer a:hover {
+    color: #764ba2;
     text-decoration: underline;
 }
 
