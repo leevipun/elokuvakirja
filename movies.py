@@ -1,44 +1,60 @@
 import db
 
-def get_movies():
+def _transform_movie(row, user_id=None):
+    """Helper function to transform database row into movie dict"""
+    movie_dict = dict(row)
+    # Create category object for template compatibility
+    if movie_dict.get('category_name'):
+        movie_dict['category'] = {'name': movie_dict['category_name']}
+    # Create platform object for template compatibility
+    if movie_dict.get('platform_name'):
+        movie_dict['platform'] = {'name': movie_dict['platform_name']}
+    # Add favorite status
+    movie_dict['is_favorite'] = bool(movie_dict.get('user_favorite'))
+    # Use average rating for display
+    if movie_dict.get('average_rating'):
+        movie_dict['rating'] = round(float(movie_dict['average_rating']), 1)
+    else:
+        movie_dict['rating'] = None
+    movie_dict['user_watched'] = bool(movie_dict.get('user_watched'))
+    return movie_dict
+
+def get_movies(page=1, per_page=20):
+    offset = (page - 1) * per_page
     sql = """
-    SELECT m.*,
-            c.name AS category_name,
-            d.name AS director_name,
-            s.name AS platform_name,
-            AVG(CAST(ur.rating AS FLOAT)) AS average_rating,
-            COUNT(ur.id) AS total_ratings
+    SELECT m.id,
+           m.title,
+           m.year,
+           m.duration,
+           m.owner_id,
+           m.category_id,
+           m.streaming_platform_id,
+           m.director_id,
+           m.created_at,
+           c.name AS category_name,
+           d.name AS director_name,
+           s.name AS platform_name,
+           COALESCE((
+               SELECT AVG(CAST(rating AS FLOAT))
+               FROM user_ratings
+               WHERE movie_id = m.id AND rating IS NOT NULL
+           ), NULL) AS average_rating,
+           COALESCE((
+               SELECT COUNT(*)
+               FROM user_ratings
+               WHERE movie_id = m.id AND rating IS NOT NULL
+           ), 0) AS total_ratings
     FROM movies m
     LEFT JOIN categories c ON m.category_id = c.id
     LEFT JOIN directors d ON m.director_id = d.id
     LEFT JOIN streaming_platforms s ON m.streaming_platform_id = s.id
-    LEFT JOIN user_ratings ur ON m.id = ur.movie_id
-    GROUP BY m.id
     ORDER BY m.created_at DESC
+    LIMIT ? OFFSET ?
     """
-    results = db.query(sql)
+    results = db.query(sql, [per_page, offset])
 
     # Convert to list of dictionaries for easier handling
-    movies = []
-    for row in results:
-        movie_dict = dict(row)
-        # Create category object for template compatibility
-        if movie_dict.get('category_name'):
-            movie_dict['category'] = {'name': movie_dict['category_name']}
-        # Create platform object for template compatibility
-        if movie_dict.get('platform_name'):
-            movie_dict['platform'] = {'name': movie_dict['platform_name']}
-        # Add favorite status
-        movie_dict['is_favorite'] = bool(movie_dict.get('user_favorite'))
-        # Use average rating for display
-        if movie_dict.get('average_rating'):
-            movie_dict['rating'] = round(float(movie_dict['average_rating']), 1)
-        else:
-            movie_dict['rating'] = None
-        movie_dict['user_watched'] = bool(movie_dict.get('user_watched'))
-
-        movies.append(movie_dict)
-
+    movies = [_transform_movie(row) for row in results]
     return movies if movies else []
 
 def get_movie_by_id(movie_id, user_id=None):
@@ -54,8 +70,13 @@ def get_movie_by_id(movie_id, user_id=None):
                 ur.watched AS user_watched,
                 ur.watch_date,
                 ur.watched_with,
-                ur.favorite AS user_favorite,
-                AVG(CAST(ur2.rating AS FLOAT)) AS average_rating,
+                ur.review,
+                CASE WHEN uf.movie_id IS NOT NULL THEN 1 ELSE 0 END AS user_favorite,
+                COALESCE((
+                    SELECT AVG(CAST(rating AS FLOAT))
+                    FROM user_ratings
+                    WHERE movie_id = m.id AND rating IS NOT NULL
+                ), NULL) AS average_rating,,
                 COUNT(ur2.id) AS total_ratings
             FROM movies m
             LEFT JOIN categories c ON m.category_id = c.id
@@ -100,7 +121,7 @@ def get_movie_by_id(movie_id, user_id=None):
 
 def get_movies_by_user(user_id):
     sql = """
-        SELECT DISTINCT m.*,
+        SELECT m.*,
                c.name AS category_name,
                d.name AS director_name,
                s.name AS platform_name,
@@ -108,7 +129,7 @@ def get_movies_by_user(user_id):
                ur.watched AS user_watched,
                ur.favorite AS user_favorite,
                AVG(CAST(ur2.rating AS FLOAT)) AS average_rating,
-               COUNT(ur2.id) AS total_ratings
+               COUNT(DISTINCT ur2.id) AS total_ratings
         FROM movies m
         LEFT JOIN user_ratings ur 
                ON m.id = ur.movie_id AND ur.user_id = ?
@@ -122,24 +143,7 @@ def get_movies_by_user(user_id):
     """
     results = db.query(sql, [user_id, user_id, user_id])
 
-    movies = []
-    for row in results:
-        movie_dict = dict(row)
-        # Create category object for template compatibility
-        if movie_dict.get('category_name'):
-            movie_dict['category'] = {'name': movie_dict['category_name']}
-        # Create platform object for template compatibility
-        if movie_dict.get('platform_name'):
-            movie_dict['platform'] = {'name': movie_dict['platform_name']}
-        # Add favorite status
-        movie_dict['is_favorite'] = bool(movie_dict.get('user_favorite'))
-        # Use average rating for display
-        if movie_dict.get('average_rating'):
-            movie_dict['rating'] = round(float(movie_dict['average_rating']), 1)
-        movie_dict['user_watched'] = bool(movie_dict.get('user_watched'))
-
-        movies.append(movie_dict)
-
+    movies = [_transform_movie(row) for row in results]
     return movies
 
 
@@ -207,14 +211,15 @@ def add_movie(user_id, movie):
     db.execute(sql_rating, params_rating)
     return movie_id
 
-def search_movies(user_id=None, filter_options=None):
-    """Search movies based on various criteria"""
+def search_movies(user_id=None, filter_options=None, page=1, per_page=20):
+    """Search movies based on various criteria - optimized with pagination"""
     if filter_options is None:
         filter_options = {}
 
-    # Base SQL query
+    offset = (page - 1) * per_page
+
+    # Base SQL query - only join user data if user_id provided
     if user_id:
-        # Get user's rated movies with their ratings
         sql = """
         SELECT
             m.*,
@@ -226,7 +231,7 @@ def search_movies(user_id=None, filter_options=None):
             ur.watched AS user_watched,
             ur.favorite AS user_favorite,
             AVG(CAST(ur2.rating AS FLOAT)) AS average_rating,
-            COUNT(ur2.id) AS total_ratings
+            COUNT(DISTINCT ur2.id) AS total_ratings
         FROM movies m
         LEFT JOIN categories c ON m.category_id = c.id
         LEFT JOIN directors d ON m.director_id = d.id
@@ -236,7 +241,6 @@ def search_movies(user_id=None, filter_options=None):
         """
         params = [user_id]
     else:
-        # Get all movies with average ratings
         sql = """
         SELECT
             m.*,
@@ -245,7 +249,7 @@ def search_movies(user_id=None, filter_options=None):
             s.name AS platform_name,
             m.year AS release_year,
             AVG(CAST(ur.rating AS FLOAT)) AS average_rating,
-            COUNT(ur.id) AS total_ratings
+            COUNT(DISTINCT ur.id) AS total_ratings
         FROM movies m
         LEFT JOIN categories c ON m.category_id = c.id
         LEFT JOIN directors d ON m.director_id = d.id
@@ -264,6 +268,8 @@ def search_movies(user_id=None, filter_options=None):
     has_filters = any([query, genre, year, platform, rating])
     if user_id or has_filters:
         if not user_id:
+            sql += " WHERE 1=1"
+        else:
             sql += " WHERE 1=1"
 
         # Add search conditions
@@ -353,28 +359,21 @@ def search_movies(user_id=None, filter_options=None):
     else:  # relevance or default
         sql += " ORDER BY m.created_at DESC"
 
+    # Get total count before pagination (for pagination info)
+    count_sql = f"SELECT COUNT(DISTINCT m.id) as total FROM ({sql})"
+    count_result = db.query(count_sql, params)
+    total_results = count_result[0]['total'] if count_result else 0
+
+    # Add pagination
+    sql += f" LIMIT ? OFFSET ?"
+    params.extend([per_page, offset])
+
     results = db.query(sql, params)
 
     # Convert to list of dictionaries with proper formatting
-    movies = []
-    for row in results:
-        movie_dict = dict(row)
-        # Create category object for template compatibility
-        if movie_dict.get('category_name'):
-            movie_dict['category'] = {'name': movie_dict['category_name']}
-        # Create platform object for template compatibility
-        if movie_dict.get('platform_name'):
-            movie_dict['platform'] = {'name': movie_dict['platform_name']}
-        # Add favorite status
-        movie_dict['is_favorite'] = bool(movie_dict.get('user_favorite'))
-        # Use average rating for display
-        if movie_dict.get('average_rating'):
-            movie_dict['rating'] = round(float(movie_dict['average_rating']), 1)
-        movie_dict['user_watched'] = bool(movie_dict.get('user_watched'))
+    movies = [_transform_movie(row) for row in results]
 
-        movies.append(movie_dict)
-
-    return movies
+    return movies, total_results
 
 def update_movie_owner(user_id, movie):
     if not user_id:
@@ -471,3 +470,31 @@ def delete_movie(user_id, movie_id):
         db.execute(sql_delete_rating, [user_id, movie_id])
 
     return movie_id
+
+def add_to_favorites(user_id, movie_id):
+    if not user_id:
+        return "User ID is required"
+    
+    if not movie_id:
+        return "Movie ID is required"
+
+    sql = "INSERT OR IGNORE INTO user_favorites (user_id, movie_id) VALUES (?, ?)"
+    db.execute(sql, [user_id, movie_id])
+
+def remove_from_favorites(user_id, movie_id):
+    if not user_id:
+        return "User ID is required"
+    
+    if not movie_id:
+        return "Movie ID is required"
+
+    sql = "DELETE FROM user_favorites where user_id = ? AND movie_id = ?"
+    db.execute(sql, [user_id, movie_id])
+
+def get_favorites(user_id):
+    if not user_id:
+        return "User ID is required"
+    
+    sql = """SELECT COUNT(uf.id) as count FROM user_favorites uf WHERE user_id = ?"""
+    result = db.query(sql, [user_id])
+    return result[0]['count'] if result else 0

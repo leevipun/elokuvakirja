@@ -46,3 +46,30 @@ CREATE TABLE user_ratings (
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   UNIQUE(user_id, movie_id)
 );
+
+CREATE TABLE user_favorites (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  movie_id INTEGER NOT NULL REFERENCES movies(id) ON DELETE CASCADE,
+  UNIQUE(user_id, movie_id)
+);
+
+-- MOVIES INDEXIT
+CREATE INDEX idx_movies_title ON movies(title);
+CREATE INDEX idx_movies_owner_id ON movies(owner_id);
+CREATE INDEX idx_movies_category_id ON movies(category_id);
+CREATE INDEX idx_movies_director_id ON movies(director_id);
+CREATE INDEX idx_movies_platform_id ON movies(streaming_platform_id);
+CREATE INDEX idx_movies_year ON movies(year);
+CREATE INDEX idx_movies_created_at ON movies(created_at);
+
+-- USER_RATINGS INDEXIT
+CREATE INDEX idx_user_ratings_movie_id ON user_ratings(movie_id);
+CREATE INDEX idx_user_ratings_user_id ON user_ratings(user_id);
+CREATE INDEX idx_user_ratings_created_at ON user_ratings(created_at);
+CREATE INDEX idx_user_ratings_movie_rating ON user_ratings(movie_id, rating);
+CREATE INDEX idx_user_ratings_rating ON user_ratings(rating) WHERE rating IS NOT NULL;
+
+-- USER_FAVORITES INDEXIT
+CREATE INDEX idx_user_favorites_user_id ON user_favorites(user_id);
+>>>>>>> Stashed changes

@@ -2,8 +2,10 @@ from datetime import datetime
 import sqlite3
 import secrets
 import os
+import time
+from math import ceil
 
-from flask import Flask, render_template, request, flash, redirect, session, get_flashed_messages, abort
+from flask import Flask, render_template, request, flash, redirect, session, get_flashed_messages, abort, g
 from werkzeug.security import check_password_hash
 from dotenv import load_dotenv
 
@@ -21,6 +23,16 @@ load_dotenv()
 app = Flask(__name__, static_url_path='/static')
 app.secret_key = os.getenv("SECRET_KEY") or "fallback-secret-key-for-development-only"
 
+@app.before_request
+def before_request():
+    g.start_time = time.time()
+
+@app.after_request
+def after_request(response):
+    elapsed_time = round(time.time() - g.start_time, 2)
+    print("elapsed time:", elapsed_time, "s")
+    return response
+
 # Add Jinja2 filter for date formatting
 @app.template_filter('dateformat')
 def dateformat(date_value):
@@ -35,6 +47,15 @@ def dateformat(date_value):
         return date_value.strftime('%Y-%m-%d')
     return str(date_value)
 
+# Add global functions to Jinja2 context
+@app.context_processor
+def inject_globals():
+    return {
+        'max': max,
+        'min': min,
+        'range': range
+    }
+
 @app.route('/')
 def index():
     session["csrf_token"] = secrets.token_hex(16)
@@ -45,8 +66,29 @@ def index():
             user_id = user["id"]
             session["user_id"] = user_id
 
-    user_movies = movies.get_movies()
-    return render_template('index.html', movies=user_movies, csrf_token=session.get("csrf_token"))
+    # Get page number from request, default to 1
+    page = request.args.get('page', 1, type=int)
+    per_page = 20  # Movies per page
+    
+    user_movies = movies.get_movies(page=page, per_page=per_page)
+    
+    # Calculate total items (simple query for count)
+    import db
+    count_result = db.query("SELECT COUNT(*) as total FROM movies")
+    total_items = count_result[0]['total'] if count_result else 0
+    total_pages = ceil(total_items / per_page) if total_items > 0 else 1
+
+    pagination = {
+        "total_pages": total_pages,
+        "current_page": page,
+        "total_items": total_items,
+        "has_prev": page > 1,
+        "has_next": page < total_pages,
+        "prev_page": page - 1 if page > 1 else None,
+        "next_page": page + 1 if page < total_pages else None,
+    }
+    
+    return render_template('index.html', movies=user_movies, pagination=pagination, csrf_token=session.get("csrf_token"))
 
 @app.route('/login', methods=["GET", "POST"])
 def login():
@@ -116,6 +158,14 @@ def register():
         flash("Username already exists")
         return redirect("/register")
 
+def _get_form_entities():
+    """Cache entity lookups to avoid duplicate queries"""
+    return {
+        'categories': categories.get_categories() or [],
+        'platforms': platforms.get_platforms() or [],
+        'directors': directors.get_directors() or []
+    }
+
 @app.route('/add', methods=["POST", "GET"])
 def add():
     if "username" not in session:
@@ -127,10 +177,14 @@ def add():
 
     if request.method == "GET":
         # Load existing categories for the form
-        existing_categories = categories.get_categories() or []
-        existing_platforms = platforms.get_platforms() or []
-        existing_directors = directors.get_directors() or []
-        return render_template("add.html", categories=existing_categories, directors=existing_directors, platforms=existing_platforms, current_year=datetime.now().year, csrf_token=session.get("csrf_token"))
+        entities = _get_form_entities()
+        session["csrf_token"] = secrets.token_hex(16)
+        return render_template("add.html", 
+                             categories=entities['categories'], 
+                             directors=entities['directors'], 
+                             platforms=entities['platforms'], 
+                             current_year=datetime.now().year, 
+                             csrf_token=session.get("csrf_token"))
 
     csrf_token = request.form.get("csrf_token")
     if not csrf_token or csrf_token != session.get("csrf_token"):
@@ -140,10 +194,13 @@ def add():
     title = request.form.get("title", "").strip()
     if not title:
         flash("Movie title is required", "error")
-        existing_categories = categories.get_categories() or []
-        existing_platforms = platforms.get_platforms() or []
-        existing_directors = directors.get_directors() or []
-        return render_template("add.html", categories=existing_categories, directors=existing_directors, platforms=existing_platforms, current_year=datetime.now().year, csrf_token=session.get("csrf_token"))
+        entities = _get_form_entities()
+        return render_template("add.html", 
+                             categories=entities['categories'], 
+                             directors=entities['directors'], 
+                             platforms=entities['platforms'], 
+                             current_year=datetime.now().year, 
+                             csrf_token=session.get("csrf_token"))
 
     # Handle category selection or creation
     category_id = None
@@ -218,8 +275,12 @@ def add():
         return redirect("/")
     except Exception as e:
         flash(f"Error adding movie: {str(e)}", "error")
-        existing_categories = categories.get_categories() or []
-        return render_template("add.html", categories=existing_categories, current_year=datetime.now().year)
+        entities = _get_form_entities()
+        return render_template("add.html", 
+                             categories=entities['categories'], 
+                             directors=entities['directors'], 
+                             platforms=entities['platforms'], 
+                             current_year=datetime.now().year)
 
 @app.route('/movie/<int:movie_id>')
 def movie_detail(movie_id):
@@ -283,28 +344,54 @@ def search():
         if user:
             user_id = user["id"]
 
-    # Get search parameters
-    query = request.args.get('q', '').strip()
-    genre = request.args.get('genre', '').strip()
-    year = request.args.get('year', '').strip()
-    platform = request.args.get('platform', '').strip()
-    rating = request.args.get('rating', '').strip()
-    sort_by = request.args.get('sort', 'date_added').strip()
+    # Get page number from request, default to 1
+    page = request.args.get('page', 1, type=int)
+    per_page = 20
 
-    # Always get search results - works with or without user_id
-    search_results = movies.search_movies(
+    # Extract and normalize filter options
+    filter_options = {
+        'query': request.args.get('q', '').strip(),
+        'genre': request.args.get('genre', '').strip(),
+        'year': request.args.get('year', '').strip(),
+        'platform': request.args.get('platform', '').strip(),
+        'rating': request.args.get('rating', '').strip(),
+        'sort_by': request.args.get('sort', 'relevance').strip()
+    }
+
+    # Get search results with pagination
+    search_results, total_results = movies.search_movies(
         user_id=user_id,
-        filter_options=request.args
+        filter_options=filter_options,
+        page=page,
+        per_page=per_page
     )
 
+    # Calculate pagination info
+    total_pages = ceil(total_results / per_page) if total_results > 0 else 1
+    if page < 1:
+        page = 1
+    elif page > total_pages:
+        page = total_pages
+
+    pagination = {
+        'current_page': page,
+        'total_pages': total_pages,
+        'per_page': per_page,
+        'total_items': total_results,
+        'has_prev': page > 1,
+        'has_next': page < total_pages,
+        'prev_page': page - 1 if page > 1 else None,
+        'next_page': page + 1 if page < total_pages else None,
+    }
+
     # Get filter options for the form
-    available_categories = categories.get_categories() or []
-    available_platforms = platforms.get_platforms() or []
+    entities = _get_form_entities()
 
     return render_template('search.html',
                          movies=search_results,
-                         categories=available_categories,
-                         platforms=available_platforms)
+                         pagination=pagination,
+                         categories=entities['categories'],
+                         platforms=entities['platforms'])
 
 @app.route('/edit/<int:movie_id>', methods=["POST", "GET"])
 def edit(movie_id):
@@ -323,10 +410,14 @@ def edit(movie_id):
             return redirect("/")
         if movie["owner_id"] != user["id"]:
             return render_template("edit.html", movie=movie, csrf_token=session.get("csrf_token"))
-        existing_categories = categories.get_categories() or []
-        existing_platforms = platforms.get_platforms() or []
-        existing_directors = directors.get_directors() or []
-        return render_template('edit_owner.html', movie=movie, categories=existing_categories, directors=existing_directors, platforms=existing_platforms, current_year=datetime.now().year, csrf_token=session.get("csrf_token"))
+        entities = _get_form_entities()
+        return render_template('edit_owner.html', 
+                             movie=movie, 
+                             categories=entities['categories'], 
+                             directors=entities['directors'], 
+                             platforms=entities['platforms'], 
+                             current_year=datetime.now().year, 
+                             csrf_token=session.get("csrf_token"))
 
     # Handle POST request to update movie
     csrf_token = request.form.get("csrf_token")
@@ -398,8 +489,6 @@ def edit(movie_id):
             "rewatchable": bool(request.form.get("rewatchable"))
         }
 
-
-
         try:
             movies.update_movie_owner(user["id"], movie_data)
             flash("Movie updated successfully!", "success")
@@ -465,12 +554,15 @@ def dashboard():
 
     user_movies = movies.get_movies_by_user(user["id"])
     user_reviews = review.get_reviews_by_user(user["id"])
+    
     total_movies = len(user_movies)
-    favorite_movies = [movie for movie in user_movies if movie.get("favorite")]
-    total_wathch_time = round(sum(movie.get("duration", 0) for movie in user_movies if movie.get("duration")) / 60, 1)
-    total_favorites = len(favorite_movies)
+    total_watch_time = round(sum(movie.get("duration", 0) for movie in user_movies if movie.get("duration")) / 60, 1)
+    total_favorites = movies.get_favorites(user["id"])
     total_reviews = len(user_reviews)
-    avg_rating = round(sum(review["rating"] for review in user_reviews if review["rating"]) / total_reviews, 2) if total_reviews > 0 else 0
+    
+    # Calculate average rating only from reviews with ratings
+    ratings = [r["rating"] for r in user_reviews if r["rating"]]
+    avg_rating = round(sum(ratings) / len(ratings), 2) if ratings else 0
 
     # Convert created_at string to datetime object
     created_at = datetime.fromisoformat(user["created_at"])
@@ -479,7 +571,7 @@ def dashboard():
     user_data = {
         "total_movies": total_movies,
         "total_favorites": total_favorites,
-        "total_wathch_time": total_wathch_time,
+        "total_wathch_time": total_watch_time,
         "total_reviews": total_reviews,
         "avg_rating": avg_rating,
         "member_since": member_since,
@@ -488,6 +580,22 @@ def dashboard():
     }
 
     return render_template('user-dashboard.html', user_data=user_data)
+
+@app.route('/favorites/<int:movie_id>', methods=["POST"])
+def favorites(movie_id):
+    if "user_id" not in session:
+        return redirect("/login")
+    
+    user_id = session["user_id"]
+    
+    method = request.form.get("_method", "").upper()
+    
+    if method == "DELETE":
+        movies.remove_from_favorites(user_id, movie_id)
+    else:
+        movies.add_to_favorites(user_id, movie_id)
+    
+    return redirect(f"/movie/{movie_id}")    
 
 @app.route('/logout')
 def logout():

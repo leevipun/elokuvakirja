@@ -116,7 +116,7 @@
             {% if movies is defined %}
                 <div class="results-header">
                     <div class="results-count">
-                        Löytyi {{ movies|length }} elokuvaa
+                        Löytyi {{ pagination.total_items }} elokuvaa
                     </div>
                     <div class="sort-options">
                         <form method="GET" action="/search" style="display: inline;">
@@ -189,6 +189,39 @@
                         </a>
                         {% endfor %}
                     </div>
+
+                    <!-- Pagination Controls for Search Results -->
+                    {% if pagination and pagination.total_pages > 1 %}
+                    <div class="pagination">
+                        <div class="pagination-info">
+                            Sivu {{ pagination.current_page }} / {{ pagination.total_pages }} 
+                            ({{ pagination.total_items }} elokuvaa yhteensä)
+                        </div>
+                        <div class="pagination-controls">
+                            {% if pagination.has_prev %}
+                            <a href="/search?q={{ request.args.get('q', '') }}&genre={{ request.args.get('genre', '') }}&year={{ request.args.get('year', '') }}&platform={{ request.args.get('platform', '') }}&rating={{ request.args.get('rating', '') }}&sort={{ request.args.get('sort', '') }}&page={{ pagination.prev_page }}" class="pagination-btn prev">← Edellinen</a>
+                            {% else %}
+                            <span class="pagination-btn prev disabled">← Edellinen</span>
+                            {% endif %}
+
+                            <div class="pagination-numbers">
+                                {% for page_num in range(max(1, pagination.current_page - 2), min(pagination.total_pages + 1, pagination.current_page + 3)) %}
+                                    {% if page_num == pagination.current_page %}
+                                    <span class="pagination-number active">{{ page_num }}</span>
+                                    {% else %}
+                                    <a href="/search?q={{ request.args.get('q', '') }}&genre={{ request.args.get('genre', '') }}&year={{ request.args.get('year', '') }}&platform={{ request.args.get('platform', '') }}&rating={{ request.args.get('rating', '') }}&sort={{ request.args.get('sort', '') }}&page={{ page_num }}" class="pagination-number">{{ page_num }}</a>
+                                    {% endif %}
+                                {% endfor %}
+                            </div>
+
+                            {% if pagination.has_next %}
+                            <a href="/search?q={{ request.args.get('q', '') }}&genre={{ request.args.get('genre', '') }}&year={{ request.args.get('year', '') }}&platform={{ request.args.get('platform', '') }}&rating={{ request.args.get('rating', '') }}&sort={{ request.args.get('sort', '') }}&page={{ pagination.next_page }}" class="pagination-btn next">Seuraava →</a>
+                            {% else %}
+                            <span class="pagination-btn next disabled">Seuraava →</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
                 {% else %}
                     <!-- No Results -->
                     <div class="no-results">
