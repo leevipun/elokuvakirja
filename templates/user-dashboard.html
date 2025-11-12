@@ -51,7 +51,7 @@
                     <span class="stat-label">Favorites</span>
                 </div>
                 <div class="stat-card">
-                    <span class="stat-value">{{ user_data.total_wathch_time }}</span>
+                    <span class="stat-value">{{ user_data.total_watch_time }}</span>
                     <span class="stat-label">Total Hours</span>
                 </div>
             </div>
@@ -72,14 +72,47 @@
                             <a href="/movie/{{ movie.id }}">
                             <div class="movie-list-title">{{movie.title}}</div>
                             <div class="movie-list-meta">
-                                <span>{{ movie.watch_date }}</span>
-                                <span class="movie-list-rating">⭐ {{ movie.rating }}/5</span>
+                                <span>{{ movie.watch_date}}</span>
+                                <span class="movie-list-rating">⭐ {% if movie.rating %}{{ movie.rating }}/5{% else %}Not rated{% endif %}</span>
                             </div>
                             </a>
                         </div>
                     </div>
                     {% endfor %}
                 </div>
+
+                <!-- Pagination Controls for Recently Added -->
+                {% if pagination and pagination.total_pages > 1 %}
+                <div class="pagination">
+                    <div class="pagination-info">
+                        Sivu {{ pagination.current_page }} / {{ pagination.total_pages }} 
+                        ({{ pagination.total_items }} elokuvaa yhteensä)
+                    </div>
+                    <div class="pagination-controls">
+                        {% if pagination.has_prev %}
+                        <a href="/dashboard?page={{ pagination.prev_page }}" class="pagination-btn prev">← Previous</a>
+                        {% else %}
+                        <span class="pagination-btn prev disabled">← Previous</span>
+                        {% endif %}
+
+                        <div class="pagination-numbers">
+                            {% for page_num in range(max(1, pagination.current_page - 2), min(pagination.total_pages + 1, pagination.current_page + 3)) %}
+                                {% if page_num == pagination.current_page %}
+                                <span class="pagination-number active">{{ page_num }}</span>
+                                {% else %}
+                                <a href="/dashboard?page={{ page_num }}" class="pagination-number">{{ page_num }}</a>
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+
+                        {% if pagination.has_next %}
+                        <a href="/dashboard?page={{ pagination.next_page }}" class="pagination-btn next">Next →</a>
+                        {% else %}
+                        <span class="pagination-btn next disabled">Next →</span>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
             </div>
 
             <!-- User Statistics -->
@@ -88,19 +121,15 @@
                 <div class="stats-list">
                     <div class="stats-item">
                         <span class="stats-item-label">Total Ratings Given</span>
-                        <span class="stats-item-value">{{ user_data.total_reviews }}</span>
+                        <span class="stats-item-value">{{ user_data.total_ratings_given }}</span>
                     </div>
                     <div class="stats-item">
                         <span class="stats-item-label">Reviews Written</span>
-                        <span class="stats-item-value">{{ user_data.total_reviews }}</span>
+                        <span class="stats-item-value">{{ user_data.total_reviews_written }}</span>
                     </div>
                     <div class="stats-item">
                         <span class="stats-item-label">Favorite Movies</span>
                         <span class="stats-item-value">{{ user_data.total_favorites }}</span>
-                    </div>
-                    <div class="stats-item">
-                        <span class="stats-item-label">Rewatchable Movies</span>
-                        <span class="stats-item-value">6</span>
                     </div>
                     <div class="stats-item">
                         <span class="stats-item-label">Member Since</span>

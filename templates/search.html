@@ -43,16 +43,17 @@
             <form class="search-form" method="GET" action="/search">
                 <div class="search-main">
                     <div class="search-input-group">
-                        <label for="q" class="filter-label">Name of a movie</label>
+                        <label for="q" class="filter-label">Search movies</label>
                         <input 
                             type="text" 
                             id="q" 
                             name="q"
                             class="search-input" 
-                            placeholder="Kirjoita elokuvan nimi, ohjaaja tai näyttelijä..."
+                            placeholder="Movie title or director name..."
                             value="{{ request.args.get('q', '') }}"
                             autocomplete="off"
                         >
+                        <small class="search-hint">💡 Search by movie title</small>
                     </div>
                     <button type="submit" class="search-btn">
                         🔍 Search
@@ -107,6 +108,11 @@
                             <option value="2" {{ 'selected' if request.args.get('rating') == '2' }}>⭐⭐ (2/5+)</option>
                             <option value="1" {{ 'selected' if request.args.get('rating') == '1' }}>⭐ (1/5+)</option>
                         </select>
+                    </div>
+
+                    <div class="filter-actions">
+                        <button type="submit" class="filter-btn apply-btn">Apply Filters</button>
+                        <a href="/search" class="filter-btn reset-btn">Reset All</a>
                     </div>
                 </div>
             </form>
@@ -199,9 +205,9 @@
                         </div>
                         <div class="pagination-controls">
                             {% if pagination.has_prev %}
-                            <a href="/search?q={{ request.args.get('q', '') }}&genre={{ request.args.get('genre', '') }}&year={{ request.args.get('year', '') }}&platform={{ request.args.get('platform', '') }}&rating={{ request.args.get('rating', '') }}&sort={{ request.args.get('sort', '') }}&page={{ pagination.prev_page }}" class="pagination-btn prev">← Edellinen</a>
+                            <a href="/search?q={{ request.args.get('q', '') }}&genre={{ request.args.get('genre', '') }}&year={{ request.args.get('year', '') }}&platform={{ request.args.get('platform', '') }}&rating={{ request.args.get('rating', '') }}&sort={{ request.args.get('sort', '') }}&page={{ pagination.prev_page }}" class="pagination-btn prev">← Previous</a>
                             {% else %}
-                            <span class="pagination-btn prev disabled">← Edellinen</span>
+                            <span class="pagination-btn prev disabled">← Previous</span>
                             {% endif %}
 
                             <div class="pagination-numbers">
@@ -215,9 +221,9 @@
                             </div>
 
                             {% if pagination.has_next %}
-                            <a href="/search?q={{ request.args.get('q', '') }}&genre={{ request.args.get('genre', '') }}&year={{ request.args.get('year', '') }}&platform={{ request.args.get('platform', '') }}&rating={{ request.args.get('rating', '') }}&sort={{ request.args.get('sort', '') }}&page={{ pagination.next_page }}" class="pagination-btn next">Seuraava →</a>
+                            <a href="/search?q={{ request.args.get('q', '') }}&genre={{ request.args.get('genre', '') }}&year={{ request.args.get('year', '') }}&platform={{ request.args.get('platform', '') }}&rating={{ request.args.get('rating', '') }}&sort={{ request.args.get('sort', '') }}&page={{ pagination.next_page }}" class="pagination-btn next">Next →</a>
                             {% else %}
-                            <span class="pagination-btn next disabled">Seuraava →</span>
+                            <span class="pagination-btn next disabled">Next →</span>
                             {% endif %}
                         </div>
                     </div>

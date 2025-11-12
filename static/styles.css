@@ -1242,6 +1242,62 @@ form:not(.add-movie-form) .form-group {
     border-color: #667eea;
 }
 
+.filter-actions {
+    grid-column: 1 / -1;
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-end;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid #e2e8f0;
+}
+
+.filter-btn {
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: none;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+
+.apply-btn {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+}
+
+.apply-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+    background: linear-gradient(135deg, #5568d3, #6b3a8a);
+}
+
+.reset-btn {
+    background: #f0f4ff;
+    color: #667eea;
+    border: 2px solid #667eea;
+}
+
+.reset-btn:hover {
+    background: #e6e8ff;
+    transform: translateY(-2px);
+}
+
+.search-hint {
+    display: block;
+    margin-top: 0.5rem;
+    color: #718096;
+    font-size: 0.85rem;
+    font-style: italic;
+}
+
 .search-results {
     margin-top: 2rem;
 }
@@ -1412,6 +1468,16 @@ form:not(.add-movie-form) .form-group {
 
     .filters-section {
         grid-template-columns: 1fr;
+    }
+
+    .filter-actions {
+        flex-direction: column;
+        align-items: stretch;
+        justify-content: center;
+    }
+
+    .filter-btn {
+        width: 100%;
     }
 
     .results-header {

@@ -355,37 +355,34 @@ def search():
         'year': request.args.get('year', '').strip(),
         'platform': request.args.get('platform', '').strip(),
         'rating': request.args.get('rating', '').strip(),
-        'sort_by': request.args.get('sort', 'relevance').strip()
+        'sort_by': request.args.get('sort', 'date_added').strip()
     }
 
-    # Get search results with pagination
-    search_results, total_results = movies.search_movies(
+    # Get filter options for the form (always needed)
+    entities = _get_form_entities()
+
+    # Get total count for accurate pagination
+    total_items = movies.get_search_count(filter_options)
+    total_pages = ceil(total_items / per_page) if total_items > 0 else 1
+    
+    # Get search results with pagination (always show results)
+    search_results = movies.search_movies(
         user_id=user_id,
         filter_options=filter_options,
         page=page,
         per_page=per_page
     )
 
-    # Calculate pagination info
-    total_pages = ceil(total_results / per_page) if total_results > 0 else 1
-    if page < 1:
-        page = 1
-    elif page > total_pages:
-        page = total_pages
-
     pagination = {
         'current_page': page,
         'total_pages': total_pages,
+        'total_items': total_items,
         'per_page': per_page,
-        'total_items': total_results,
         'has_prev': page > 1,
         'has_next': page < total_pages,
         'prev_page': page - 1 if page > 1 else None,
         'next_page': page + 1 if page < total_pages else None,
     }
-
-    # Get filter options for the form
-    entities = _get_form_entities()
 
     return render_template('search.html',
                          movies=search_results,
@@ -552,34 +549,78 @@ def dashboard():
     if not user:
         return redirect("/login")
 
-    user_movies = movies.get_movies_by_user(user["id"])
+    # Get page number from request, default to 1
+    page = request.args.get('page', 1, type=int)
+    per_page = 10  # Movies per page in dashboard
+
+    user_movies = movies.get_movies_by_user(user["id"], page=page, per_page=per_page)
     user_reviews = review.get_reviews_by_user(user["id"])
     
-    total_movies = len(user_movies)
-    total_watch_time = round(sum(movie.get("duration", 0) for movie in user_movies if movie.get("duration")) / 60, 1)
-    total_favorites = movies.get_favorites(user["id"])
-    total_reviews = len(user_reviews)
+    # Get total count for pagination
+    total_movies_count = movies.get_user_movies_count(user["id"])
+    total_pages = ceil(total_movies_count / per_page) if total_movies_count > 0 else 1
     
-    # Calculate average rating only from reviews with ratings
-    ratings = [r["rating"] for r in user_reviews if r["rating"]]
-    avg_rating = round(sum(ratings) / len(ratings), 2) if ratings else 0
+    # Fetch all stats from materialized user_stats table (optimized by triggers)
+    import db
+    user_stats_result = db.query(
+        """SELECT 
+           total_movies_watched,
+           avg_rating,
+           total_favorites,
+           total_watch_hours,
+           total_ratings_given,
+           total_reviews_written
+        FROM user_stats
+        WHERE user_id = ?""",
+        (user["id"],)
+    )
+    
+    # Use stats from materialized table if available, otherwise use defaults
+    if user_stats_result:
+        stats = user_stats_result[0]
+        total_movies = stats["total_movies_watched"] or 0
+        avg_rating = round(float(stats["avg_rating"]) or 0, 2)
+        total_favorites = stats["total_favorites"] or 0
+        total_watch_time = round(float(stats["total_watch_hours"]) or 0, 1)
+        total_ratings_given = stats["total_ratings_given"] or 0
+        total_reviews_written = stats["total_reviews_written"] or 0
+    else:
+        # Fallback if no stats exist yet
+        total_movies = total_movies_count
+        total_ratings_given = len(user_reviews)
+        ratings = [r["rating"] for r in user_reviews if "rating" in r and r["rating"]]
+        avg_rating = round(sum(ratings) / len(ratings), 2) if ratings else 0
+        total_favorites = movies.get_favorites(user["id"])
+        total_watch_time = 0
+        total_reviews_written = len([r for r in user_reviews if "review" in r and r["review"]])
 
     # Convert created_at string to datetime object
     created_at = datetime.fromisoformat(user["created_at"])
     member_since = (datetime.now() - created_at).days
 
+    pagination = {
+        "current_page": page,
+        "total_pages": total_pages,
+        "total_items": total_movies,
+        "has_prev": page > 1,
+        "has_next": page < total_pages,
+        "prev_page": page - 1 if page > 1 else None,
+        "next_page": page + 1 if page < total_pages else None,
+    }
+
     user_data = {
         "total_movies": total_movies,
         "total_favorites": total_favorites,
-        "total_wathch_time": total_watch_time,
-        "total_reviews": total_reviews,
+        "total_watch_time": total_watch_time,
+        "total_ratings_given": total_ratings_given,
+        "total_reviews_written": total_reviews_written,
         "avg_rating": avg_rating,
         "member_since": member_since,
         "movies": user_movies,
         "reviews": user_reviews
     }
 
-    return render_template('user-dashboard.html', user_data=user_data)
+    return render_template('user-dashboard.html', user_data=user_data, pagination=pagination)
 
 @app.route('/favorites/<int:movie_id>', methods=["POST"])
 def favorites(movie_id):

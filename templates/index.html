@@ -110,9 +110,9 @@
             </div>
             <div class="pagination-controls">
                 {% if pagination.has_prev %}
-                <a href="/?page={{ pagination.prev_page }}" class="pagination-btn prev">← Edellinen</a>
+                <a href="/?page={{ pagination.prev_page }}" class="pagination-btn prev">← Previous</a>
                 {% else %}
-                <span class="pagination-btn prev disabled">← Edellinen</span>
+                <span class="pagination-btn prev disabled">← Previous</span>
                 {% endif %}
 
                 <div class="pagination-numbers">
@@ -126,9 +126,9 @@
                 </div>
 
                 {% if pagination.has_next %}
-                <a href="/?page={{ pagination.next_page }}" class="pagination-btn next">Seuraava →</a>
+                <a href="/?page={{ pagination.next_page }}" class="pagination-btn next">Next →</a>
                 {% else %}
-                <span class="pagination-btn next disabled">Seuraava →</span>
+                <span class="pagination-btn next disabled">Next →</span>
                 {% endif %}
             </div>
         </div>

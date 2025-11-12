@@ -11,45 +11,44 @@ def _transform_movie(row, user_id=None):
         movie_dict['platform'] = {'name': movie_dict['platform_name']}
     # Add favorite status
     movie_dict['is_favorite'] = bool(movie_dict.get('user_favorite'))
-    # Use average rating for display
-    if movie_dict.get('average_rating'):
+    
+    # Use user's own rating if available, otherwise use average rating
+    if movie_dict.get('user_rating'):
+        movie_dict['rating'] = round(float(movie_dict['user_rating']), 1)
+    elif movie_dict.get('average_rating'):
         movie_dict['rating'] = round(float(movie_dict['average_rating']), 1)
     else:
         movie_dict['rating'] = None
+    
     movie_dict['user_watched'] = bool(movie_dict.get('user_watched'))
     return movie_dict
 
 def get_movies(page=1, per_page=20):
     offset = (page - 1) * per_page
     sql = """
-    SELECT m.id,
-           m.title,
-           m.year,
-           m.duration,
-           m.owner_id,
-           m.category_id,
-           m.streaming_platform_id,
-           m.director_id,
-           m.created_at,
-           c.name AS category_name,
-           d.name AS director_name,
-           s.name AS platform_name,
-           COALESCE((
-               SELECT AVG(CAST(rating AS FLOAT))
-               FROM user_ratings
-               WHERE movie_id = m.id AND rating IS NOT NULL
-           ), NULL) AS average_rating,
-           COALESCE((
-               SELECT COUNT(*)
-               FROM user_ratings
-               WHERE movie_id = m.id AND rating IS NOT NULL
-           ), 0) AS total_ratings
-    FROM movies m
-    LEFT JOIN categories c ON m.category_id = c.id
-    LEFT JOIN directors d ON m.director_id = d.id
-    LEFT JOIN streaming_platforms s ON m.streaming_platform_id = s.id
-    ORDER BY m.created_at DESC
-    LIMIT ? OFFSET ?
+        SELECT 
+            m.id,
+            m.title,
+            m.year,
+            m.duration,
+            m.owner_id,
+            m.category_id,
+            m.streaming_platform_id,
+            m.director_id,
+            m.created_at,
+            c.name AS category_name,
+            d.name AS director_name,
+            s.name AS platform_name,
+            mrs.average_rating,
+            mrs.total_ratings
+        FROM movies m
+        LEFT JOIN categories c ON m.category_id = c.id
+        LEFT JOIN directors d ON m.director_id = d.id
+        LEFT JOIN streaming_platforms s ON m.streaming_platform_id = s.id
+        LEFT JOIN movie_rating_stats mrs ON m.id = mrs.movie_id
+        ORDER BY m.created_at DESC
+        LIMIT ?
+        OFFSET ?;
     """
     results = db.query(sql, [per_page, offset])
 
@@ -72,22 +71,21 @@ def get_movie_by_id(movie_id, user_id=None):
                 ur.watched_with,
                 ur.review,
                 CASE WHEN uf.movie_id IS NOT NULL THEN 1 ELSE 0 END AS user_favorite,
-                COALESCE((
-                    SELECT AVG(CAST(rating AS FLOAT))
-                    FROM user_ratings
-                    WHERE movie_id = m.id AND rating IS NOT NULL
-                ), NULL) AS average_rating,,
-                COUNT(ur2.id) AS total_ratings
+                mrs.average_rating,
+                mrs.total_ratings
             FROM movies m
             LEFT JOIN categories c ON m.category_id = c.id
             LEFT JOIN streaming_platforms s ON m.streaming_platform_id = s.id
             LEFT JOIN directors d ON m.director_id = d.id
-            LEFT JOIN user_ratings ur ON m.id = ur.movie_id AND ur.user_id = ?
-            LEFT JOIN user_ratings ur2 ON m.id = ur2.movie_id
+            LEFT JOIN user_ratings ur 
+                ON m.id = ur.movie_id AND ur.user_id = ?
+            LEFT JOIN movie_rating_stats mrs ON m.id = mrs.movie_id
+            LEFT JOIN user_favorites uf 
+                ON uf.movie_id = m.id AND uf.user_id = ?
             WHERE m.id = ?
-            GROUP BY m.id
+            LIMIT 1;
         """
-        results = db.query(sql, [user_id, movie_id])
+        results = db.query(sql, [user_id, user_id, movie_id])
     else:
         sql = """
             SELECT 
@@ -95,15 +93,14 @@ def get_movie_by_id(movie_id, user_id=None):
                 c.name AS genre,
                 d.name AS director,
                 s.name AS platform,
-                AVG(CAST(ur.rating AS FLOAT)) AS average_rating,
-                COUNT(ur.id) AS total_ratings
+                mrs.average_rating,
+                mrs.total_ratings
             FROM movies m
             LEFT JOIN categories c ON m.category_id = c.id
             LEFT JOIN streaming_platforms s ON m.streaming_platform_id = s.id
             LEFT JOIN directors d ON m.director_id = d.id
-            LEFT JOIN user_ratings ur ON m.id = ur.movie_id
+            LEFT JOIN movie_rating_stats mrs ON m.id = mrs.movie_id
             WHERE m.id = ?
-            GROUP BY m.id
         """
         results = db.query(sql, [movie_id])
 
@@ -119,7 +116,8 @@ def get_movie_by_id(movie_id, user_id=None):
 
     return movie
 
-def get_movies_by_user(user_id):
+def get_movies_by_user(user_id, page=1, per_page=20):
+    offset = (page - 1) * per_page
     sql = """
         SELECT m.*,
                c.name AS category_name,
@@ -128,24 +126,35 @@ def get_movies_by_user(user_id):
                ur.rating AS user_rating,
                ur.watched AS user_watched,
                ur.favorite AS user_favorite,
-               AVG(CAST(ur2.rating AS FLOAT)) AS average_rating,
-               COUNT(DISTINCT ur2.id) AS total_ratings
+               ur.watch_date AS watch_date,
+               mrs.average_rating,
+               mrs.total_ratings
         FROM movies m
         LEFT JOIN user_ratings ur 
                ON m.id = ur.movie_id AND ur.user_id = ?
         LEFT JOIN categories c ON m.category_id = c.id
         LEFT JOIN directors d ON m.director_id = d.id
         LEFT JOIN streaming_platforms s ON m.streaming_platform_id = s.id
-        LEFT JOIN user_ratings ur2 ON m.id = ur2.movie_id
-        WHERE m.owner_id = ? OR ur.user_id = ?
-        GROUP BY m.id
+        LEFT JOIN movie_rating_stats mrs ON m.id = mrs.movie_id
+        WHERE (m.owner_id = ? OR ur.user_id = ?) AND ur.watched = 1
         ORDER BY m.created_at DESC
+        LIMIT ? OFFSET ?
     """
-    results = db.query(sql, [user_id, user_id, user_id])
+    results = db.query(sql, [user_id, user_id, user_id, per_page, offset])
 
     movies = [_transform_movie(row) for row in results]
     return movies
 
+def get_user_movies_count(user_id):
+    """Get total count of movies for a user (owned or rated)"""
+    sql = """
+        SELECT COUNT(DISTINCT m.id) as count
+        FROM movies m
+        LEFT JOIN user_ratings ur ON m.id = ur.movie_id AND ur.user_id = ?
+        WHERE m.owner_id = ? OR ur.user_id = ?
+    """
+    result = db.query(sql, [user_id, user_id, user_id])
+    return result[0]['count'] if result else 0
 
 def add_movie(user_id, movie):
     if not user_id:
@@ -167,11 +176,9 @@ def add_movie(user_id, movie):
                     category_id,
                     streaming_platform_id,
                     owner_id,
-                    director_id,
-                    review, 
-                    rewatchable) 
+                    director_id) 
                 VALUES 
-                    (?, ?, ?, ?, ?, ?, ?, ?, ?)"""
+                    (?, ?, ?, ?, ?, ?, ?)"""
 
         params = (
             movie["title"],
@@ -180,17 +187,15 @@ def add_movie(user_id, movie):
             movie.get("category_id") if movie.get("category_id") else None,
             movie.get("streaming_platform_id") if movie.get("streaming_platform_id") else None,
             user_id,
-            movie.get("director_id") if movie.get("director_id") else None,
-            movie["review"] if movie["review"] else None,
-            bool(movie.get("rewatchable", False))
+            movie.get("director_id") if movie.get("director_id") else None
         )
 
         movie_id = db.execute(sql, params)
 
     # Add user rating
     sql_rating = """INSERT OR REPLACE INTO user_ratings
-                (user_id, movie_id, rating, watched, watch_date, watched_with, favorite)
-                VALUES (?, ?, ?, ?, ?, ?, ?)"""
+                (user_id, movie_id, rating, watched, watch_date, watched_with, review, favorite)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)"""
 
     rating_value = movie.get("rating")
     if rating_value:
@@ -205,6 +210,7 @@ def add_movie(user_id, movie):
         1,  # Mark as watched
         movie["watch_date"] if movie["watch_date"] else None,
         movie["watched_with"] if movie["watched_with"] else None,
+        movie.get("review") if movie.get("review") else None,
         bool(movie.get("favorite", False))
     )
 
@@ -212,168 +218,176 @@ def add_movie(user_id, movie):
     return movie_id
 
 def search_movies(user_id=None, filter_options=None, page=1, per_page=20):
-    """Search movies based on various criteria - optimized with pagination"""
     if filter_options is None:
         filter_options = {}
 
     offset = (page - 1) * per_page
-
-    # Base SQL query - only join user data if user_id provided
-    if user_id:
-        sql = """
-        SELECT
-            m.*,
-            c.name AS category_name,
-            d.name AS director_name,
-            s.name AS platform_name,
-            m.year AS release_year,
-            ur.rating AS user_rating,
-            ur.watched AS user_watched,
-            ur.favorite AS user_favorite,
-            AVG(CAST(ur2.rating AS FLOAT)) AS average_rating,
-            COUNT(DISTINCT ur2.id) AS total_ratings
-        FROM movies m
-        LEFT JOIN categories c ON m.category_id = c.id
-        LEFT JOIN directors d ON m.director_id = d.id
-        LEFT JOIN streaming_platforms s ON m.streaming_platform_id = s.id
-        LEFT JOIN user_ratings ur ON m.id = ur.movie_id AND ur.user_id = ?
-        LEFT JOIN user_ratings ur2 ON m.id = ur2.movie_id
-        """
-        params = [user_id]
-    else:
-        sql = """
-        SELECT
-            m.*,
-            c.name AS category_name,
-            d.name AS director_name,
-            s.name AS platform_name,
-            m.year AS release_year,
-            AVG(CAST(ur.rating AS FLOAT)) AS average_rating,
-            COUNT(DISTINCT ur.id) AS total_ratings
-        FROM movies m
-        LEFT JOIN categories c ON m.category_id = c.id
-        LEFT JOIN directors d ON m.director_id = d.id
-        LEFT JOIN streaming_platforms s ON m.streaming_platform_id = s.id
-        LEFT JOIN user_ratings ur ON m.id = ur.movie_id
-        """
-        params = []
+    params = []
 
     query = filter_options.get("query", "").strip()
     genre = filter_options.get("genre", "").strip()
     year = filter_options.get("year", "").strip()
     platform = filter_options.get("platform", "").strip()
     rating = filter_options.get("rating", "").strip()
-    sort_by = filter_options.get("sort_by", "relevance").strip()
+    sort_by = filter_options.get("sort_by", "date_added").strip()
 
-    has_filters = any([query, genre, year, platform, rating])
-    if user_id or has_filters:
-        if not user_id:
-            sql += " WHERE 1=1"
-        else:
-            sql += " WHERE 1=1"
+    where = []
 
-        # Add search conditions
-        if query:
-            sql += """ AND (
-                LOWER(m.title) LIKE LOWER(?) OR 
-                LOWER(d.name) LIKE LOWER(?) OR 
-                LOWER(c.name) LIKE LOWER(?) OR
-                LOWER(m.review) LIKE LOWER(?)
-            )"""
-            query_param = f"%{query}%"
-            params.extend([query_param, query_param, query_param, query_param])
+    # Title query
+    if query:
+        where.append("m.title LIKE ?")
+        params.append(f"%{query}%")
 
-        # Genre filter
-        if genre:
-            genre_mapping = {
-                'action': 'Action',
-                'comedy': 'Comedy', 
-                'drama': 'Drama',
-                'horror': 'Horror',
-                'romance': 'Romance',
-                'scifi': 'Sci-Fi',
-                'thriller': 'Thriller',
-                'animation': 'Animation'
-            }
-            if genre in genre_mapping:
-                sql += " AND LOWER(c.name) = LOWER(?)"
-                params.append(genre_mapping[genre])
+    # Year filters
+    year_filters = {
+        "2024": "m.year = 2024",
+        "2023": "m.year = 2023",
+        "2022": "m.year = 2022",
+        "2021": "m.year = 2021",
+        "2020": "m.year = 2020",
+        "2010s": "m.year BETWEEN 2010 AND 2019",
+        "2000s": "m.year BETWEEN 2000 AND 2009",
+        "1990s": "m.year BETWEEN 1990 AND 1999",
+        "older": "m.year < 1990"
+    }
+    if year in year_filters:
+        where.append(year_filters[year])
 
-        # Year filter
-        if year:
-            if year == '2024':
-                sql += " AND m.year = 2024"
-            elif year == '2023':
-                sql += " AND m.year = 2023"
-            elif year == '2022':
-                sql += " AND m.year = 2022"
-            elif year == '2021':
-                sql += " AND m.year = 2021"
-            elif year == '2020':
-                sql += " AND m.year = 2020"
-            elif year == '2010s':
-                sql += " AND m.year >= 2010 AND m.year <= 2019"
-            elif year == '2000s':
-                sql += " AND m.year >= 2000 AND m.year <= 2009"
-            elif year == '1990s':
-                sql += " AND m.year >= 1990 AND m.year <= 1999"
-            elif year == 'older':
-                sql += " AND m.year < 1990"
+    # Genre
+    if genre:
+        where.append("c.name = ?")
+        params.append(genre)
 
-        # Platform filter
-        if platform:
-            platform_mapping = {
-                'netflix': 'Netflix',
-                'hbo': 'HBO Max',
-                'disney': 'Disney+',
-                'amazon': 'Amazon Prime Video',
-                'apple': 'Apple TV+',
-                'theater': 'Elokuvateatteri'
-            }
-            if platform in platform_mapping:
-                sql += " AND LOWER(s.name) = LOWER(?)"
-                params.append(platform_mapping[platform])
+    # Platform
+    if platform:
+        where.append("s.name = ?")
+        params.append(platform)
 
-        # Rating filter (minimum rating)
-        if rating:
-            try:
-                min_rating = float(rating)
-                if user_id:
-                    sql += " AND ur.rating >= ?"
-                else:
-                    sql += " AND AVG(CAST(ur.rating AS FLOAT)) >= ?"
-                params.append(min_rating)
-            except ValueError:
-                pass
+    # Minimum rating
+    if rating:
+        try:
+            min_rating = float(rating)
+            params.append(min_rating)
+            where.append("COALESCE(mrs.average_rating, 0) >= ?")
+        except ValueError:
+            pass
+
+    # WHERE clause
+    where_sql = f"WHERE {' AND '.join(where)}" if where else ""
 
     # Sorting
-    sql += " GROUP BY m.id"
-    if sort_by == 'title':
-        sql += " ORDER BY m.title ASC"
-    elif sort_by == 'year':
-        sql += " ORDER BY m.year DESC"
-    elif sort_by == 'rating':
-        sql += " ORDER BY average_rating DESC"
-    elif sort_by == 'date_added':
-        sql += " ORDER BY m.created_at DESC"
-    else:  # relevance or default
-        sql += " ORDER BY m.created_at DESC"
+    order_map = {
+        "title": "m.title ASC",
+        "year": "m.year DESC, m.title ASC",
+        "rating": "COALESCE(mrs.average_rating, 0) DESC, m.created_at DESC",
+        "date_added": "m.created_at DESC"
+    }
 
-    # Get total count before pagination (for pagination info)
-    count_sql = f"SELECT COUNT(DISTINCT m.id) as total FROM ({sql})"
-    count_result = db.query(count_sql, params)
-    total_results = count_result[0]['total'] if count_result else 0
+    if sort_by == "relevance" and query:
+        order_sql = "CASE WHEN LOWER(m.title) = LOWER(?) THEN 0 ELSE 1 END, m.created_at DESC"
+        params.insert(0, query)
+    else:
+        order_sql = order_map.get(sort_by, "m.created_at DESC")
 
-    # Add pagination
-    sql += f" LIMIT ? OFFSET ?"
+    sql = f"""
+        SELECT
+            m.id,
+            m.title,
+            m.year,
+            m.duration,
+            m.owner_id,
+            m.category_id,
+            m.streaming_platform_id,
+            m.director_id,
+            m.created_at,
+            c.name AS category_name,
+            d.name AS director_name,
+            s.name AS platform_name,
+            mrs.average_rating,
+            mrs.total_ratings
+        FROM movies m
+        LEFT JOIN categories c ON m.category_id = c.id
+        LEFT JOIN directors d ON m.director_id = d.id
+        LEFT JOIN streaming_platforms s ON m.streaming_platform_id = s.id
+        LEFT JOIN movie_rating_stats mrs ON m.id = mrs.movie_id
+        {where_sql}
+        ORDER BY {order_sql}
+        LIMIT ? OFFSET ?
+    """
+
     params.extend([per_page, offset])
 
     results = db.query(sql, params)
+    return [_transform_movie(row) for row in results]
 
-    # Convert to list of dictionaries with proper formatting
-    movies = [_transform_movie(row) for row in results]
+def get_search_count(filter_options=None):
+    """Get total count of search results for accurate pagination"""
+    if filter_options is None:
+        filter_options = {}
 
-    return movies, total_results
+    params = []
+
+    # Extract filters
+    query = filter_options.get("query", "").strip()
+    genre = filter_options.get("genre", "").strip()
+    year = filter_options.get("year", "").strip()
+    platform = filter_options.get("platform", "").strip()
+    rating = filter_options.get("rating", "").strip()
+
+    # Build WHERE clause
+    where_clauses = []
+
+    if query:
+        where_clauses.append("(m.title LIKE ?)")
+        params.append(f"%{query}%")
+
+    if year:
+        year_mapping = {
+            '2024': "m.year = 2024",
+            '2023': "m.year = 2023",
+            '2022': "m.year = 2022",
+            '2021': "m.year = 2021",
+            '2020': "m.year = 2020",
+            '2010s': "m.year BETWEEN 2010 AND 2019",
+            '2000s': "m.year BETWEEN 2000 AND 2009",
+            '1990s': "m.year BETWEEN 1990 AND 1999",
+            'older': "m.year < 1990"
+        }
+        if year in year_mapping:
+            where_clauses.append(year_mapping[year])
+
+    if genre:
+        where_clauses.append("LOWER(c.name) = LOWER(?)")
+        params.append(genre)
+
+    if platform:
+        where_clauses.append("LOWER(s.name) = LOWER(?)")
+        params.append(platform)
+
+    if rating:
+        try:
+            min_rating = float(rating)
+            where_clauses.append("mrs.average_rating >= ?")
+            params.append(min_rating)
+        except ValueError:
+            pass
+
+    where_sql = ""
+    if where_clauses:
+        where_sql = " WHERE " + " AND ".join(where_clauses)
+
+    # Optimized count query - only join necessary tables
+    sql = f"""
+        SELECT COUNT(DISTINCT m.id) as count
+        FROM movies m
+        LEFT JOIN categories c ON m.category_id = c.id
+        LEFT JOIN streaming_platforms s ON m.streaming_platform_id = s.id
+        LEFT JOIN movie_rating_stats mrs ON m.id = mrs.movie_id
+        {where_sql}
+    """
+
+    result = db.query(sql, params)
+    return result[0]['count'] if result else 0
 
 def update_movie_owner(user_id, movie):
     if not user_id:
@@ -386,9 +400,7 @@ def update_movie_owner(user_id, movie):
                  duration = ?,
                  category_id = ?,
                  streaming_platform_id = ?,
-                 director_id = ?,
-                 review = ?,
-                 rewatchable = ?
+                 director_id = ?
              WHERE id = ? AND owner_id = ?"""
 
     params = (
@@ -398,13 +410,37 @@ def update_movie_owner(user_id, movie):
         movie.get("category_id") if movie.get("category_id") else None,
         movie.get("streaming_platform_id") if movie.get("streaming_platform_id") else None,
         movie.get("director_id") if movie.get("director_id") else None,
-        movie["review"] if movie["review"] else None,
-        bool(movie.get("rewatchable", False)),
         movie["id"],
         user_id
     )
 
     db.execute(sql, params)
+    
+    # Also update user_ratings if review/rating/favorite provided
+    rating_value = movie.get("rating")
+    if rating_value:
+        if float(rating_value) > 5:
+            rating_value = float(rating_value) / 2
+    
+    sql_rating = """UPDATE user_ratings
+                    SET rating = ?,
+                        watch_date = ?,
+                        watched_with = ?,
+                        review = ?,
+                        favorite = ?
+                    WHERE user_id = ? AND movie_id = ?"""
+    
+    params_rating = (
+        rating_value if rating_value else None,
+        movie["watch_date"] if movie.get("watch_date") else None,
+        movie["watched_with"] if movie.get("watched_with") else None,
+        movie.get("review") if movie.get("review") else None,
+        bool(movie.get("favorite", False)),
+        user_id,
+        movie["id"]
+    )
+    
+    db.execute(sql_rating, params_rating)
     return movie["id"]
 
 def update_movie(user_id, movie):
