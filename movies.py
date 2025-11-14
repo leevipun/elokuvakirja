@@ -114,6 +114,8 @@ def get_movie_by_id(movie_id, user_id=None):
     movie['user_watched'] = bool(movie.get('user_watched'))
     movie['is_favorite'] = bool(movie.get('user_favorite'))
 
+    print(movie)
+
     return movie
 
 def get_movies_by_user(user_id, page=1, per_page=20):
@@ -215,6 +217,18 @@ def add_movie(user_id, movie):
     )
 
     db.execute(sql_rating, params_rating)
+    
+    # Sync favorite status with user_favorites table
+    is_favorite = bool(movie.get("favorite", False))
+    if is_favorite:
+        # Add to favorites if not already there
+        sql_add_fav = "INSERT OR IGNORE INTO user_favorites (user_id, movie_id) VALUES (?, ?)"
+        db.execute(sql_add_fav, [user_id, movie_id])
+    else:
+        # Remove from favorites if it was there
+        sql_remove_fav = "DELETE FROM user_favorites WHERE user_id = ? AND movie_id = ?"
+        db.execute(sql_remove_fav, [user_id, movie_id])
+    
     return movie_id
 
 def search_movies(user_id=None, filter_options=None, page=1, per_page=20):

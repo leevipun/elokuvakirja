@@ -46,7 +46,7 @@
             <input type="hidden" name="csrf_token" value="{{ session.csrf_token }}" required />
 
             <div class="form-section">
-                <h3>Movie Information {% if request.endpoint == 'edit' %}/edit/{{ movie.id }}{% else %}/add-review/{{ movie.id }}{% endif %}
+                <h3>Movie Information
 </h3>
                 <div class="form-group">
                     <label>Movie Title</label>
@@ -84,7 +84,7 @@
                 <div class="form-row">
                     <div class="form-group">
                         <label for="watchDate">Watch Date</label>
-                        <input type="date" id="watchDate" name="watchDate" value="{{ movie.watch_date | dateformat }}" />
+                        <input type="date" id="watchDate" name="watchDate" value="{% if movie.watch_date %}{{ movie.watch_date if movie.watch_date is string else movie.watch_date.strftime('%Y-%m-%d') if movie.watch_date else '' }}{% endif %}" />
                     </div>
 
                     <div class="form-group">
@@ -99,16 +99,14 @@
                     <input type="text" id="watchedWith" name="watchedWith" value="{{ movie.watched_with or '' }}"
                         placeholder="e.g. Family, Friends, Alone" />
                 </div>
+                <div class="form-group">
+                    <label for="review">My Review</label>
+                    <textarea id="review" name="review" rows="4" placeholder="Write your review here...">{{ movie.review or '' }}</textarea>
+                </div>
 
                 <div class="form-group checkbox-group">
                     <input type="checkbox" id="favorite" name="favorite" {% if movie.is_favorite %}checked{% endif %} />
                     <label for="favorite">Mark as Favorite ⭐</label>
-                </div>
-
-                <div class="form-group checkbox-group">
-                    <input type="checkbox" id="rewatchable" name="rewatchable" {% if movie.rewatchable %}checked{% endif
-                        %} />
-                    <label for="rewatchable">Would watch again</label>
                 </div>
             </div>
 

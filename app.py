@@ -302,7 +302,8 @@ def add_review(movie_id):
         return redirect("/login")
     if request.method == "GET":
         session["csrf_token"] = secrets.token_hex(16)
-        movie = movies.get_movie_by_id(movie_id)
+        user = users.get_user(session["username"])
+        movie = movies.get_movie_by_id(movie_id, user["id"])  # Pass user_id to get user's rating data
         if not movie:
             flash("Movie not found")
             return redirect("/")
@@ -317,15 +318,11 @@ def add_review(movie_id):
 
     movie_data = {
         "id": movie_id,
-        "title": request.form.get("title", "").strip(),
-        "year": request.form.get("year") or None,
-        "duration": request.form.get("duration") or None,
         "watch_date": request.form.get("watchDate") or None,
         "rating": request.form.get("rating") or None,
         "watched_with": request.form.get("watchedWith", "").strip() or None,
         "review": request.form.get("review", "").strip() or None,
         "favorite": bool(request.form.get("favorite")),
-        "rewatchable": bool(request.form.get("rewatchable"))
     }
 
     try:
@@ -497,12 +494,15 @@ def edit(movie_id):
         # Non-owner is adding a review/rating
         movie_data = {
             "id": movie_id,
+            "watch_date": request.form.get("watchDate") or None,
             "rating": request.form.get("rating") or None,
             "watched_with": request.form.get("watchedWith", "").strip() or None,
             "review": request.form.get("review", "").strip() or None,
             "favorite": bool(request.form.get("favorite")),
             "rewatchable": bool(request.form.get("rewatchable"))
         }
+
+        print(movie_data)
 
         try:
             review.add_review(user["id"], movie_data)
