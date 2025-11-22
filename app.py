@@ -266,7 +266,6 @@ def add():
         "owner_id": user["id"],
         "review": request.form.get("review", "").strip() or None,
         "favorite": bool(request.form.get("favorite")),
-        "rewatchable": bool(request.form.get("rewatchable"))
     }
 
     try:
@@ -480,7 +479,6 @@ def edit(movie_id):
             "watched_with": request.form.get("watchedWith", "").strip() or None,
             "review": request.form.get("review", "").strip() or None,
             "favorite": bool(request.form.get("favorite")),
-            "rewatchable": bool(request.form.get("rewatchable"))
         }
 
         try:
@@ -499,7 +497,6 @@ def edit(movie_id):
             "watched_with": request.form.get("watchedWith", "").strip() or None,
             "review": request.form.get("review", "").strip() or None,
             "favorite": bool(request.form.get("favorite")),
-            "rewatchable": bool(request.form.get("rewatchable"))
         }
 
         print(movie_data)
