@@ -95,9 +95,15 @@
                         Add My Review
                     </button>
                     {% endif %}
-                    <button class="btn-favorite" id="favoriteBtn">
-                        {% if movie.is_favorite %} 💖 Remove from Favorites {% else %} 🤍 Add to Favorites {% endif %}
-                    </button>
+                    <form method="POST" action="/favorites/{{ movie.id }}" style="display: inline;">
+                        <input type="hidden" name="csrf_token" value="{{ session.get('csrf_token') }}">
+                        {% if movie.is_favorite %}
+                        <input type="hidden" name="_method" value="DELETE">
+                        <button type="submit" class="btn-favorite">💖 Remove from Favorites</button>
+                        {% else %}
+                        <button type="submit" class="btn-favorite">🤍 Add to Favorites</button>
+                        {% endif %}
+                    </form>
                 </div>
                 {% endif %}
             </div>
@@ -118,12 +124,19 @@
                             <span class="detail-value platform-{{ movie.platform }}">{{ movie.platform.title() }}</span>
                         </div>
                         {% endif %} 
+                    </div>
+                </div>
+
+                {% if movie.user_rating or movie.watch_date or movie.watched_with or movie.review %}
+                <div class="detail-card review-card">
+                    <h3>👤 My Viewing</h3>
+                    <div class="detail-list">
                         {% if movie.watch_date %}
                         <div class="detail-item">
-                            <span class="detail-label">My Watch Date:</span>
+                            <span class="detail-label">Watch Date:</span>
                             <span class="detail-value">{{ movie.watch_date }}</span>
                         </div>
-                        {% endif %} 
+                        {% endif %}
                         {% if movie.watched_with %}
                         <div class="detail-item">
                             <span class="detail-label">Watched With:</span>
@@ -132,10 +145,11 @@
                         {% endif %}
                     </div>
                 </div>
+                {% endif %}
 
                 {% if movie.review %}
                 <div class="detail-card review-card">
-                    <h3>📝 General Review</h3>
+                    <h3>📝 My Review</h3>
                     <div class="review-content">
                         <p>{{ movie.review }}</p>
                     </div>

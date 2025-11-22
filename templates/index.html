@@ -38,11 +38,14 @@
             <div class="flash-message error">{{ message }}</div>
             {% endfor %}
         </div>
-        {% endif %} {% endwith %}
+        {% endif %}
+        {% endwith %}
+        
         {% if session.username and movies %}
         <header>
-            <h1>My Movie Collection 🎬</h1>
-            <p>{{ movies|length }} movies in your personal library</p>
+            <h1>Movie Mania's Collection 🎬</h1>
+            <p>We have {{ pagination.total_items }} in our collection</p>
+            <p>Check out your <a href="/dashboard">personal collection</a></p>
         </header>
 
         <div class="movies-overview-grid">
@@ -56,7 +59,8 @@
                     <div class="movie-overview-meta">
                         {% if movie.year %}
                         <span class="meta-item year">{{ movie.year }}</span>
-                        {% endif %} {% if movie.category_name %}
+                        {% endif %} 
+                        {% if movie.category_name %}
                         <span class="meta-item genre">{{ movie.category_name.title() }}</span>
                         {% endif %}
                     </div>
@@ -64,10 +68,12 @@
                     {% if movie.rating %}
                     <div class="rating-mini">
                         <span class="rating-stars">
+                            {% set rating_int = (movie.rating | int) %}
+                            {% set rating_frac = (movie.rating % 1) %}
                             {% for i in range(1, 6) %} 
-                            {% if i <= (movie.rating | int) %} 
+                            {% if i <= rating_int %} 
                             ⭐ 
-                            {% elif i == ((movie.rating | int) + 1) and (movie.rating % 1) >= 0.5 %} 
+                            {% elif i == (rating_int + 1) and rating_frac >= 0.5 %} 
                             ⭐ 
                             {% else %} 
                             ☆
@@ -94,6 +100,39 @@
             </div>
             {% endfor %}
         </div>
+
+        <!-- Pagination Controls -->
+        {% if pagination and pagination.total_pages > 1 %}
+        <div class="pagination">
+            <div class="pagination-info">
+                Sivu {{ pagination.current_page }} / {{ pagination.total_pages }} 
+                ({{ pagination.total_items }} elokuvaa yhteensä)
+            </div>
+            <div class="pagination-controls">
+                {% if pagination.has_prev %}
+                <a href="/?page={{ pagination.prev_page }}" class="pagination-btn prev">← Previous</a>
+                {% else %}
+                <span class="pagination-btn prev disabled">← Previous</span>
+                {% endif %}
+
+                <div class="pagination-numbers">
+                    {% for page_num in range(max(1, pagination.current_page - 2), min(pagination.total_pages + 1, pagination.current_page + 3)) %}
+                        {% if page_num == pagination.current_page %}
+                        <span class="pagination-number active">{{ page_num }}</span>
+                        {% else %}
+                        <a href="/?page={{ page_num }}" class="pagination-number">{{ page_num }}</a>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+
+                {% if pagination.has_next %}
+                <a href="/?page={{ pagination.next_page }}" class="pagination-btn next">Next →</a>
+                {% else %}
+                <span class="pagination-btn next disabled">Next →</span>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
 
         {% elif session.username %}
         <header>

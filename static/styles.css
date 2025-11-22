@@ -1242,6 +1242,62 @@ form:not(.add-movie-form) .form-group {
     border-color: #667eea;
 }
 
+.filter-actions {
+    grid-column: 1 / -1;
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-end;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid #e2e8f0;
+}
+
+.filter-btn {
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: none;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+
+.apply-btn {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+}
+
+.apply-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+    background: linear-gradient(135deg, #5568d3, #6b3a8a);
+}
+
+.reset-btn {
+    background: #f0f4ff;
+    color: #667eea;
+    border: 2px solid #667eea;
+}
+
+.reset-btn:hover {
+    background: #e6e8ff;
+    transform: translateY(-2px);
+}
+
+.search-hint {
+    display: block;
+    margin-top: 0.5rem;
+    color: #718096;
+    font-size: 0.85rem;
+    font-style: italic;
+}
+
 .search-results {
     margin-top: 2rem;
 }
@@ -1412,6 +1468,16 @@ form:not(.add-movie-form) .form-group {
 
     .filters-section {
         grid-template-columns: 1fr;
+    }
+
+    .filter-actions {
+        flex-direction: column;
+        align-items: stretch;
+        justify-content: center;
+    }
+
+    .filter-btn {
+        width: 100%;
     }
 
     .results-header {
@@ -1953,4 +2019,139 @@ form:not(.add-movie-form) .form-group {
     background: linear-gradient(45deg, #c82333, #a71e2a);
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
+}
+
+/* Pagination Styling */
+.pagination {
+    margin-top: 3rem;
+    padding: 2rem;
+    background: linear-gradient(135deg, #f8f9ff 0%, #f0f4ff 100%);
+    border-radius: 16px;
+    border: 2px solid #e6e8ff;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    align-items: center;
+}
+
+.pagination-info {
+    font-size: 1rem;
+    color: #4a5568;
+    font-weight: 500;
+    text-align: center;
+}
+
+.pagination-controls {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.pagination-btn {
+    padding: 10px 16px;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.95rem;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 100px;
+}
+
+.pagination-btn:hover:not(.disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+    background: linear-gradient(135deg, #5568d3, #6b3a8a);
+}
+
+.pagination-btn.disabled {
+    background: #ccc;
+    color: #999;
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.pagination-numbers {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.pagination-number {
+    padding: 8px 12px;
+    background: white;
+    color: #667eea;
+    border: 2px solid #667eea;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.9rem;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 36px;
+}
+
+.pagination-number:hover {
+    background: #667eea;
+    color: white;
+    transform: scale(1.1);
+}
+
+.pagination-number.active {
+    background: #667eea;
+    color: white;
+    border-color: #667eea;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    transform: scale(1.1);
+}
+
+.pagination-number.active:hover {
+    transform: scale(1.15);
+}
+
+/* Pagination responsive design */
+@media (max-width: 768px) {
+    .pagination {
+        padding: 1.5rem;
+        margin-top: 2rem;
+    }
+
+    .pagination-info {
+        font-size: 0.9rem;
+    }
+
+    .pagination-controls {
+        gap: 0.5rem;
+    }
+
+    .pagination-btn {
+        padding: 8px 12px;
+        font-size: 0.85rem;
+        min-width: 80px;
+    }
+
+    .pagination-number {
+        padding: 6px 10px;
+        font-size: 0.8rem;
+        min-width: 32px;
+    }
+
+    .pagination-btn.prev,
+    .pagination-btn.next {
+        font-size: 0.75rem;
+        padding: 6px 10px;
+        min-width: 70px;
+    }
 }
