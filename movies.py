@@ -180,9 +180,9 @@ def add_movie(user_id, movie):
                     owner_id,
                     director_id,
                     review, 
-                    rewatchable) 
+                    ) 
                 VALUES 
-                    (?, ?, ?, ?, ?, ?, ?, ?, ?)"""
+                    (?, ?, ?, ?, ?, ?, ?, ?)"""
 
         params = (
             movie["title"],
@@ -193,7 +193,6 @@ def add_movie(user_id, movie):
             user_id,
             movie.get("director_id") if movie.get("director_id") else None,
             movie["review"] if movie["review"] else None,
-            bool(movie.get("rewatchable", False))
         )
 
         movie_id = db.execute(sql, params)
@@ -416,7 +415,6 @@ def update_movie_owner(user_id, movie):
                  streaming_platform_id = ?,
                  director_id = ?,
                  review = ?,
-                 rewatchable = ?
              WHERE id = ? AND owner_id = ?"""
 
     params = (
@@ -427,7 +425,6 @@ def update_movie_owner(user_id, movie):
         movie.get("streaming_platform_id") if movie.get("streaming_platform_id") else None,
         movie.get("director_id") if movie.get("director_id") else None,
         movie["review"] if movie["review"] else None,
-        bool(movie.get("rewatchable", False)),
         movie["id"],
         user_id
     )
