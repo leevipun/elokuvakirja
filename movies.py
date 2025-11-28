@@ -178,9 +178,11 @@ def add_movie(user_id, movie):
                     category_id,
                     streaming_platform_id,
                     owner_id,
-                    director_id) 
+                    director_id,
+                    review, 
+                    ) 
                 VALUES 
-                    (?, ?, ?, ?, ?, ?, ?)"""
+                    (?, ?, ?, ?, ?, ?, ?, ?)"""
 
         params = (
             movie["title"],
@@ -189,7 +191,8 @@ def add_movie(user_id, movie):
             movie.get("category_id") if movie.get("category_id") else None,
             movie.get("streaming_platform_id") if movie.get("streaming_platform_id") else None,
             user_id,
-            movie.get("director_id") if movie.get("director_id") else None
+            movie.get("director_id") if movie.get("director_id") else None,
+            movie["review"] if movie["review"] else None,
         )
 
         movie_id = db.execute(sql, params)
@@ -200,10 +203,6 @@ def add_movie(user_id, movie):
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)"""
 
     rating_value = movie.get("rating")
-    if rating_value:
-        # Convert from 10-point to 5-point scale if needed
-        if float(rating_value) > 5:
-            rating_value = float(rating_value) / 2
 
     params_rating = (
         user_id,
@@ -414,7 +413,8 @@ def update_movie_owner(user_id, movie):
                  duration = ?,
                  category_id = ?,
                  streaming_platform_id = ?,
-                 director_id = ?
+                 director_id = ?,
+                 review = ?,
              WHERE id = ? AND owner_id = ?"""
 
     params = (
@@ -424,6 +424,7 @@ def update_movie_owner(user_id, movie):
         movie.get("category_id") if movie.get("category_id") else None,
         movie.get("streaming_platform_id") if movie.get("streaming_platform_id") else None,
         movie.get("director_id") if movie.get("director_id") else None,
+        movie["review"] if movie["review"] else None,
         movie["id"],
         user_id
     )
@@ -471,10 +472,6 @@ def update_movie(user_id, movie):
              WHERE user_id = ? AND movie_id = ?"""
 
     rating_value = movie.get("rating")
-    if rating_value:
-        # Convert from 10-point to 5-point scale if needed
-        if float(rating_value) > 5:
-            rating_value = float(rating_value) / 2
 
     params = (
         rating_value if rating_value else None,
