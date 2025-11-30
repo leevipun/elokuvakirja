@@ -11,8 +11,13 @@
 <body>
     <nav class="navbar">
         <a href="/" class="navbutton active">All Movies</a>
+        {% if session.username %}
         <a href="/add" class="navbutton">Add Movie</a>
+        {% endif %}
         <a href="/search" class="navbutton">Search</a>
+        {% if session.username %}
+        <a href="/favorites" class="navbutton">Favorites</a>
+        {% endif %}
         {% if session.username %}
         <div class="dropdown">
             <button class="dropbtn">{{ session.username }}</button>
@@ -92,8 +97,6 @@
                     <div class="movie-quick-badges">
                         {% if movie.is_favorite %}
                         <span class="quick-badge favorite">💖</span>
-                        {% endif %} {% if movie.rewatchable %}
-                        <span class="quick-badge rewatchable">🔄</span>
                         {% endif %}
                     </div>
                 </div>

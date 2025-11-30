@@ -12,6 +12,9 @@
         <a href="/add" class="navbutton">Add Movie</a>
         <a href="/search" class="navbutton active">Search</a>
         {% if session.username %}
+        <a href="/favorites" class="navbutton">Favorites</a>
+        {% endif %}
+        {% if session.username %}
         <div class="dropdown">
             <button class="dropbtn">{{ session.username }}</button>
             <div class="dropdown-content">
@@ -49,7 +52,7 @@
                             id="q" 
                             name="q"
                             class="search-input" 
-                            placeholder="Movie title or director name..."
+                            placeholder="e.g. Inception, Nolan, Action"
                             value="{{ request.args.get('q', '') }}"
                             autocomplete="off"
                         >
@@ -122,7 +125,7 @@
             {% if movies is defined %}
                 <div class="results-header">
                     <div class="results-count">
-                        Löytyi {{ pagination.total_items }} elokuvaa
+                        Founded {{ movies|length }} movie{{ 's' if movies|length != 1 }} matching your criteria
                     </div>
                     <div class="sort-options">
                         <form method="GET" action="/search" style="display: inline;">

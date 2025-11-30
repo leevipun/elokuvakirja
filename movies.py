@@ -178,9 +178,11 @@ def add_movie(user_id, movie):
                     category_id,
                     streaming_platform_id,
                     owner_id,
-                    director_id) 
+                    director_id,
+                    review, 
+                    ) 
                 VALUES 
-                    (?, ?, ?, ?, ?, ?, ?)"""
+                    (?, ?, ?, ?, ?, ?, ?, ?)"""
 
         params = (
             movie["title"],
@@ -189,7 +191,8 @@ def add_movie(user_id, movie):
             movie.get("category_id") if movie.get("category_id") else None,
             movie.get("streaming_platform_id") if movie.get("streaming_platform_id") else None,
             user_id,
-            movie.get("director_id") if movie.get("director_id") else None
+            movie.get("director_id") if movie.get("director_id") else None,
+            movie["review"] if movie["review"] else None,
         )
 
         movie_id = db.execute(sql, params)
@@ -200,10 +203,6 @@ def add_movie(user_id, movie):
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)"""
 
     rating_value = movie.get("rating")
-    if rating_value:
-        # Convert from 10-point to 5-point scale if needed
-        if float(rating_value) > 5:
-            rating_value = float(rating_value) / 2
 
     params_rating = (
         user_id,
@@ -414,7 +413,8 @@ def update_movie_owner(user_id, movie):
                  duration = ?,
                  category_id = ?,
                  streaming_platform_id = ?,
-                 director_id = ?
+                 director_id = ?,
+                 review = ?,
              WHERE id = ? AND owner_id = ?"""
 
     params = (
@@ -424,6 +424,7 @@ def update_movie_owner(user_id, movie):
         movie.get("category_id") if movie.get("category_id") else None,
         movie.get("streaming_platform_id") if movie.get("streaming_platform_id") else None,
         movie.get("director_id") if movie.get("director_id") else None,
+        movie["review"] if movie["review"] else None,
         movie["id"],
         user_id
     )
@@ -471,10 +472,6 @@ def update_movie(user_id, movie):
              WHERE user_id = ? AND movie_id = ?"""
 
     rating_value = movie.get("rating")
-    if rating_value:
-        # Convert from 10-point to 5-point scale if needed
-        if float(rating_value) > 5:
-            rating_value = float(rating_value) / 2
 
     params = (
         rating_value if rating_value else None,
@@ -544,6 +541,49 @@ def remove_from_favorites(user_id, movie_id):
 def get_favorites(user_id):
     if not user_id:
         return "User ID is required"
+    
+    sql = """SELECT COUNT(uf.id) as count FROM user_favorites uf WHERE user_id = ?"""
+    result = db.query(sql, [user_id])
+    return result[0]['count'] if result else 0
+
+def get_favorite_movies(user_id, page=1, per_page=20):
+    """Get favorite movies for a user with pagination"""
+    if not user_id:
+        return []
+    
+    offset = (page - 1) * per_page
+    sql = """
+        SELECT m.*,
+               c.name AS category_name,
+               d.name AS director_name,
+               s.name AS platform_name,
+               ur.rating AS user_rating,
+               ur.watched AS user_watched,
+               ur.favorite AS user_favorite,
+               ur.watch_date AS watch_date,
+               ur.review,
+               mrs.average_rating,
+               mrs.total_ratings
+        FROM movies m
+        INNER JOIN user_favorites uf ON m.id = uf.movie_id
+        LEFT JOIN user_ratings ur 
+               ON m.id = ur.movie_id AND ur.user_id = ?
+        LEFT JOIN categories c ON m.category_id = c.id
+        LEFT JOIN directors d ON m.director_id = d.id
+        LEFT JOIN streaming_platforms s ON m.streaming_platform_id = s.id
+        LEFT JOIN movie_rating_stats mrs ON m.id = mrs.movie_id
+        WHERE uf.user_id = ?
+        ORDER BY uf.id DESC
+        LIMIT ? OFFSET ?
+    """
+    results = db.query(sql, [user_id, user_id, per_page, offset])
+    movies = [_transform_movie(row) for row in results]
+    return movies
+
+def get_favorite_movies_count(user_id):
+    """Get total count of favorite movies for a user"""
+    if not user_id:
+        return 0
     
     sql = """SELECT COUNT(uf.id) as count FROM user_favorites uf WHERE user_id = ?"""
     result = db.query(sql, [user_id])

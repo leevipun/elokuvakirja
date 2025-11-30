@@ -10,10 +10,6 @@ def add_review(user_id, movie):
             """
 
     rating_value = movie.get("rating")
-    if rating_value:
-        # Convert from 10-point to 5-point scale if needed
-        if float(rating_value) > 5:
-            rating_value = float(rating_value) / 2
 
     params = (
         rating_value if rating_value else None,

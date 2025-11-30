@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>My Favorites - Movie Mania</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}" />
+</head>
+<body>
+    <nav class="navbar">
+        <a href="/" class="navbutton">All Movies</a>
+        <a href="/add" class="navbutton">Add Movie</a>
+        <a href="/search" class="navbutton">Search</a>
+        <a href="/favorites" class="navbutton">Favorites</a>
+        {% if session.username %}
+        <div class="dropdown">
+            <button class="dropbtn">{{ session.username }}</button>
+            <div class="dropdown-content">
+                <a href="/dashboard">Dashboard</a>
+                <a href="/logout">Logout</a>
+            </div>
+        </div>
+        {% else %}
+        <a href="/login" class="navbutton">Login</a>
+        {% endif %}
+    </nav>
+
+    <main>
+        <div class="search-container">
+            <div class="search-hero">
+                <h1>❤️ My Favorites</h1>
+                <p>Your collection of favorite movies</p>
+            </div>
+
+            {% if movies %}
+            <div class="movies-grid">
+                {% for movie in movies %}
+                <div class="movie-card">
+                    <div class="movie-header">
+                        <h3>{{ movie.title }}</h3>
+                        {% if movie.year %}
+                        <span class="movie-year">{{ movie.year }}</span>
+                        {% endif %}
+                    </div>
+
+                    <div class="movie-details">
+                        {% if movie.category %}
+                        <p><strong>Genre:</strong> {{ movie.category.name }}</p>
+                        {% endif %}
+                        {% if movie.platform %}
+                        <p><strong>Platform:</strong> {{ movie.platform.name }}</p>
+                        {% endif %}
+                        {% if movie.duration %}
+                        <p><strong>Duration:</strong> {{ movie.duration }} min</p>
+                        {% endif %}
+                    </div>
+
+                    {% if movie.rating %}
+                    <div style="margin: 1rem 0;">
+                        <strong>Rating:</strong> ⭐ {{ movie.rating }}/5
+                    </div>
+                    {% endif %}
+
+                    {% if movie.review %}
+                    <div class="movie-review">
+                        <strong>Your Review</strong>
+                        <p>{{ movie.review }}</p>
+                    </div>
+                    {% endif %}
+
+                    <div class="movie-meta">
+                        {% if movie.watch_date %}
+                        <small>Watched: {{ movie.watch_date }}</small>
+                        {% endif %}
+                    </div>
+
+                    <div class="movie-actions">
+                        <a href="/movie/{{ movie.id }}" class="btn-edit">View Details</a>
+                        {% if movie.review %}
+                        <a href="/edit/{{ movie.id }}" class="btn-add">Edit Review</a>
+                        {% else %}
+                        <a href="/add-review/{{ movie.id }}" class="btn-add">Add Review</a>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Pagination Controls -->
+            {% if pagination and pagination.total_pages > 1 %}
+            <div class="pagination">
+                <div class="pagination-info">
+                    Page {{ pagination.current_page }} / {{ pagination.total_pages }} 
+                    ({{ pagination.total_items }} favorites total)
+                </div>
+                <div class="pagination-controls">
+                    {% if pagination.has_prev %}
+                    <a href="/favorites?page={{ pagination.prev_page }}" class="pagination-btn prev">← Previous</a>
+                    {% else %}
+                    <span class="pagination-btn prev disabled">← Previous</span>
+                    {% endif %}
+
+                    <div class="pagination-numbers">
+                        {% for page_num in range(max(1, pagination.current_page - 2), min(pagination.total_pages + 1, pagination.current_page + 3)) %}
+                            {% if page_num == pagination.current_page %}
+                            <span class="pagination-number active">{{ page_num }}</span>
+                            {% else %}
+                            <a href="/favorites?page={{ page_num }}" class="pagination-number">{{ page_num }}</a>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+
+                    {% if pagination.has_next %}
+                    <a href="/favorites?page={{ pagination.next_page }}" class="pagination-btn next">Next →</a>
+                    {% else %}
+                    <span class="pagination-btn next disabled">Next →</span>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            {% else %}
+            <div class="empty-state">
+                <div class="empty-illustration" style="font-size: 4rem; margin-bottom: 1rem;">💔</div>
+                <h3>No Favorites Yet</h3>
+                <p>You haven't added any movies to your favorites yet.</p>
+                <p>Start exploring movies and mark your favorites to see them here!</p>
+                <div style="margin-top: 2rem;">
+                    <a href="/" class="btn-primary">Browse All Movies</a>
+                    <a href="/search" class="btn-secondary" style="margin-left: 1rem;">Search Movies</a>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </main>
+</body>
+</html>

@@ -12,6 +12,9 @@
             <a href="/add" class="navbutton active">Add Movie</a>
             <a href="/search" class="navbutton">Search</a>
             {% if session.username %}
+            <a href="/favorites" class="navbutton">Favorites</a>
+            {% endif %}
+            {% if session.username %}
             <div class="dropdown">
                 <button class="dropbtn">{{ session.username }}</button>
                 <div class="dropdown-content">
@@ -138,11 +141,6 @@
                     <div class="form-group checkbox-group">
                         <input type="checkbox" id="favorite" name="favorite" />
                         <label for="favorite">Mark as Favorite ⭐</label>
-                    </div>
-            
-                    <div class="form-group checkbox-group">
-                        <input type="checkbox" id="rewatchable" name="rewatchable" />
-                        <label for="rewatchable">Would watch again</label>
                     </div>
                 </div>
             
