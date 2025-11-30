@@ -545,3 +545,46 @@ def get_favorites(user_id):
     sql = """SELECT COUNT(uf.id) as count FROM user_favorites uf WHERE user_id = ?"""
     result = db.query(sql, [user_id])
     return result[0]['count'] if result else 0
+
+def get_favorite_movies(user_id, page=1, per_page=20):
+    """Get favorite movies for a user with pagination"""
+    if not user_id:
+        return []
+    
+    offset = (page - 1) * per_page
+    sql = """
+        SELECT m.*,
+               c.name AS category_name,
+               d.name AS director_name,
+               s.name AS platform_name,
+               ur.rating AS user_rating,
+               ur.watched AS user_watched,
+               ur.favorite AS user_favorite,
+               ur.watch_date AS watch_date,
+               ur.review,
+               mrs.average_rating,
+               mrs.total_ratings
+        FROM movies m
+        INNER JOIN user_favorites uf ON m.id = uf.movie_id
+        LEFT JOIN user_ratings ur 
+               ON m.id = ur.movie_id AND ur.user_id = ?
+        LEFT JOIN categories c ON m.category_id = c.id
+        LEFT JOIN directors d ON m.director_id = d.id
+        LEFT JOIN streaming_platforms s ON m.streaming_platform_id = s.id
+        LEFT JOIN movie_rating_stats mrs ON m.id = mrs.movie_id
+        WHERE uf.user_id = ?
+        ORDER BY uf.id DESC
+        LIMIT ? OFFSET ?
+    """
+    results = db.query(sql, [user_id, user_id, per_page, offset])
+    movies = [_transform_movie(row) for row in results]
+    return movies
+
+def get_favorite_movies_count(user_id):
+    """Get total count of favorite movies for a user"""
+    if not user_id:
+        return 0
+    
+    sql = """SELECT COUNT(uf.id) as count FROM user_favorites uf WHERE user_id = ?"""
+    result = db.query(sql, [user_id])
+    return result[0]['count'] if result else 0

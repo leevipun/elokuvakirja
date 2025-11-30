@@ -640,5 +640,36 @@ def logout():
     session.clear()
     return redirect("/")
 
+@app.route('/favorites')
+def view_favorites():
+    if "username" not in session:
+        return redirect("/login")
+
+    user = users.get_user(session["username"])
+    if not user:
+        return redirect("/login")
+
+    # Get page number from request, default to 1
+    page = request.args.get('page', 1, type=int)
+    per_page = 12  # Movies per page in favorites
+
+    favorite_movies = movies.get_favorite_movies(user["id"], page=page, per_page=per_page)
+    
+    # Get total count for pagination
+    total_favorites_count = movies.get_favorite_movies_count(user["id"])
+    total_pages = ceil(total_favorites_count / per_page) if total_favorites_count > 0 else 1
+
+    pagination = {
+        "current_page": page,
+        "total_pages": total_pages,
+        "total_items": total_favorites_count,
+        "has_prev": page > 1,
+        "has_next": page < total_pages,
+        "prev_page": page - 1 if page > 1 else None,
+        "next_page": page + 1 if page < total_pages else None,
+    }
+
+    return render_template('favorites.html', movies=favorite_movies, pagination=pagination)
+
 if __name__ == '__main__':
     app.run(debug=True)

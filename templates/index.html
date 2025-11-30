@@ -16,6 +16,9 @@
         {% endif %}
         <a href="/search" class="navbutton">Search</a>
         {% if session.username %}
+        <a href="/favorites" class="navbutton">Favorites</a>
+        {% endif %}
+        {% if session.username %}
         <div class="dropdown">
             <button class="dropbtn">{{ session.username }}</button>
             <div class="dropdown-content">
