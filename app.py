@@ -7,7 +7,6 @@ from math import ceil
 
 from flask import Flask, render_template, request, flash, redirect, session, get_flashed_messages, abort, g
 from werkzeug.security import check_password_hash
-from dotenv import load_dotenv
 
 
 import users
@@ -16,9 +15,6 @@ import categories
 import platforms
 import directors
 import review
-
-# Load environment variables from .env file
-load_dotenv()
 
 app = Flask(__name__, static_url_path='/static')
 app.secret_key = os.getenv("SECRET_KEY") or "fallback-secret-key-for-development-only"

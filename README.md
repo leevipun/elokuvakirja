@@ -18,19 +18,11 @@ Asenna flask-kirjasto:
 $ pip install flask
 ```
 
-Asenna load_dotenv-kirjasto:
-
-```
-$ pip install load_dotenv
-```
-
 Asenna pylint-kirjasto (koodin laadun tarkistamista varten):
 
 ```
 $ pip install pylint
 ```
-
-Lisää tiedosto .env, joka sisältää muuttujan SECRET_KEY ja sillä arvon
 
 Luo tietokannan taulut ja lisää alkutiedot:
 
