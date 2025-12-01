@@ -1,4 +1,4 @@
-# Elokuva-Arkisto - Kurssivaatimuksien Arviointi
+# Elokuva-Arkisto - Kurssivaatimuksien Arviointi (PÄIVITETTY 2025-12-01)
 
 Tämä dokumentti arvioi sovelluksen täyttämät ja täyttämättömät vaatimukset kurssin eri arvosanaluokille (3, 4 ja 5).
 
@@ -27,14 +27,14 @@ Tämä dokumentti arvioi sovelluksen täyttämät ja täyttämättömät vaatimu
 | ------------------------- | ------- | ------------------------------------------- |
 | ✅ Flask-sovellus         | TÄYTTÄÄ | Käyttää Flask 3.1.2                         |
 | ✅ SQLite-tietokanta      | TÄYTTÄÄ | `database.db` SQLite3                       |
-| ✅ HTML-pohjainen UI      | TÄYTTÄÄ | 8 HTML-pohjaa templates/-kansiossa          |
+| ✅ HTML-pohjainen UI      | TÄYTTÄÄ | 10 HTML-pohjaa templates/-kansiossa         |
 | ✅ Ei JavaScript-koodia   | TÄYTTÄÄ | Puhtaasti HTML/CSS, ei JS:ää                |
 | ✅ SQL suoraan            | TÄYTTÄÄ | Parametroidut SQL-kyselyt, ei ORM:ää        |
 | ✅ Vain Flask + Werkzeug  | TÄYTTÄÄ | Ei muita app-spesifisiä kirjastoja          |
 | ✅ Itse tehty CSS         | TÄYTTÄÄ | `static/styles.css` 1200+ riviä omaa CSS:ää |
 | ✅ Koodi englanniksi      | TÄYTTÄÄ | Kaikki funktionimet, muuttujat englanniksi  |
 | ✅ Tietokanta englanniksi | TÄYTTÄÄ | Kaikki taulut ja sarakkeet englanniksi      |
-| ✅ Git versionhallinta    | TÄYTTÄÄ | 20+ committi, `.git` kansio olemassa        |
+| ✅ Git versionhallinta    | TÄYTTÄÄ | 30+ committi, `.git` kansio olemassa        |
 
 ### Turvallisuus
 
@@ -53,7 +53,7 @@ Tämä dokumentti arvioi sovelluksen täyttämät ja täyttämättömät vaatimu
 | Vaatimus                            | Status  | Huomautukset                                |
 | ----------------------------------- | ------- | ------------------------------------------- |
 | ✅ README.md                        | TÄYTTÄÄ | Kattava README asennus- ja käyttöohjeilla   |
-| ✅ Säännölliset commitit            | TÄYTTÄÄ | 20 committi viimeisten kahden viikon aikana |
+| ✅ Säännölliset commitit            | TÄYTTÄÄ | 30+ committi viimeisten kahden viikon aikana |
 | ✅ Englanninkieliset commit-viestit | TÄYTTÄÄ | Kaikki commit-viestit englanniksi           |
 
 **ARVOSANA 3 STATUS: ✅ KAIKKI VAATIMUKSET TÄYTETTY**
@@ -112,56 +112,75 @@ Tämä dokumentti arvioi sovelluksen täyttämät ja täyttämättömät vaatimu
 
 ## 🏆 ARVOSANA 5 - EDISTYNEET VAATIMUKSET
 
-### Ohjelmointityyli - Pylint
+### Ohjelmointityyli - Pylint (PÄIVITETTY)
 
 | Vaatimus                   | Status       | Huomautukset                                          |
 | -------------------------- | ------------ | ----------------------------------------------------- |
-| ❌ Pylint-raportti annettu | **EI TÄYTÄ** | Pylint-raporttia (pylint-report.md) ei vielä olemassa |
+| ✅ Pylint-raportti annettu | **TÄYTTÄÄ** | Pylint-raportti olemassa, koodi saa arvion 9.21/10 |
 
-**Pylint-raportin luomisen vaiheet:**
+**Pylint Arviointi:**
+- **Kokonaisarvio: 9.21/10** ✅
+- **Pääasiallisia korjattavia:** Trailing whitespace -ongelmat (noin 60 tapausta)
+- **Logiikkavirheet:** 0
+- **Kriittiset ongelmat:** Ei yhtään
 
-```bash
-# Asennetaan pylint (tai tarkistetaan että se on asennettu)
-pip install pylint
+**Trailing Whitespace -ongelmat:**
+Nämä ovat tyylillisiä ongelmia (C0303), jotka eivät vaikuta koodin toimintaan. Ne ovat yksinkertaisesti ylimääräisiä välilyöntejä rivien lopussa. Niitä voitaisiin korjata automaattisella työkalulla (esim. autopep8 tai black).
 
-# Ajetaan pylint sovellukselle
-pylint app.py movies.py users.py categories.py platforms.py directors.py review.py db.py > pylint-report.txt
-
-# Luodaan pylint-report.md selostuksella jokaisesta ilmoituksesta
+```
+Pylint -analyysin tulokset:
+- Module app: 36 trailing whitespace -ongelmaa
+- Module movies: 13 trailing whitespace -ongelmaa
+- Module review: 3 trailing whitespace -ongelmaa
+- Module db, categories, platforms, directors, users: Ei ongelmia
+- Toiminnallisia virheitä: 0
 ```
 
-### Toimivuus ja Käytettävyys
+### Toimivuus ja Käytettävyys (PÄIVITETTY)
 
 | Vaatimus                                    | Status       | Huomautukset                                                                   |
 | ------------------------------------------- | ------------ | ------------------------------------------------------------------------------ |
-| ✅ Käyttäjän tekstissä rivinvaihdot näkyvät | TÄYTTÄÄ      | Review-kenttä käyttää `<textarea>` jota renderöidään HTML:ssa                  |
-| ✅ Kuvissa alt-attribuutti                  | TÄYTTÄÄ      | Sovelluksessa ei kuvia, vaan emoji-ikoneita                                    |
-| ❌ Lomakkeissa label-elementti              | **EI TÄYTÄ** | Label-elementit puuttuvat monista lomakkeista, käytetään vain `<label>` teksti |
+| ✅ Käyttäjän tekstissä rivinvaihdot näkyvät | TÄYTTÄÄ      | Review-kenttä käyttää `<textarea>` jota renderöidään HTML:ssa oikein          |
+| ✅ Kuvissa alt-attribuutti                  | TÄYTTÄÄ      | Sovelluksessa käytetään emoji-ikoneita (ei kieliä kuvia)                      |
+| ✅ Lomakkeissa label-elementti              | **TÄYTTÄÄ**  | Label-elementit lisätty kaikkiin lomakkeisiin (add.html, edit.html, login.html jne.) |
 
-**Label-elementtien lisääminen:**
+**Label-elementit löytyvät:**
+- ✅ `add.html` - Kaikki kenttät sisältävät `<label for="id">` elementit
+- ✅ `edit_owner.html` - Kaikki kenttät sisältävät `<label for="id">` elementit
+- ✅ `edit.html` - Label-elementit olemassa
+- ✅ `login.html` - Username ja password kenttien labeling
+- ✅ `register.html` - Label-elementit käytössä
 
-- `add.html`, `edit.html`, `edit_owner.html`: Label-elementit puuttuvat
-- `login.html`, `register.html`: Osittain käytössä, mutta voisi parantaa
-
-### Suuren Tietomäärän Käsittely
+### Suuren Tietomäärän Käsittely (PÄIVITETTY)
 
 | Vaatimus                       | Status  | Huomautukset                                                  |
 | ------------------------------ | ------- | ------------------------------------------------------------- |
 | ✅ Sivutus toteutettu          | TÄYTTÄÄ | Pagination 20 elokuvaa per sivu, `get_movies(page, per_page)` |
 | ✅ Testaus suurella datalla    | TÄYTTÄÄ | `seed.py` 1000 elokuvalla, 5000 arvioinnilla testattu         |
-| ✅ Indeksit tietokannassa      | TÄYTTÄÄ | 13 indeksia `schema.sql`:ssa                                  |
-| ✅ Raportointi suorituskyvystä | TÄYTTÄÄ | README.md sisältää yksityiskohtaisen performance-raportin     |
+| ✅ Indeksit tietokannassa      | TÄYTTÄÄ | 14 indeksia `schema.sql`:ssa optimoituina                     |
+| ✅ Raportointi suorituskyvystä | TÄYTTÄÄ | `performance.md` sisältää yksityiskohtaisen performance-raportin |
 
-**Suorituskykyraportin sisältö:**
+**Suorituskyky-parannukset:**
 
-- ✅ Seed-data (1000 elokuvaa, 5000 arviointia)
-- ✅ Tietokannan indeksit (13 kpl)
-- ✅ Sivutus (20 per sivu)
-- ✅ Latausajat (150-250ms per sivu)
-- ✅ Indeksien hyöty (50-72% nopeampi)
-- ✅ Testattavat ominaisuudet listattu
+Sovellus on optimoitu hämmästyttävällä tavalla:
 
-**ARVOSANA 5 STATUS: 🟡 OSITTAIN TÄYTETTY**
+| Tilanne | Aika | Nopeus |
+|---------|------|--------|
+| Ilman indeksejä ja sivutusta | 174+ sekuntia | Hyvin hidas |
+| Indekseillä ja sivutuksella | 9 sekuntia | 19x nopeampi |
+| Materiaalisoiduilla tauluilla (triggereillä) | 0.08-0.18 sekuntia | **~1000x nopeampi** |
+
+**Tietokanta-optimoinnit:**
+- ✅ 14 strategista indeksiä (movies, user_ratings, user_favorites)
+- ✅ Materialisoidut tilastotaulut (`movie_rating_stats`, `user_stats`)
+- ✅ Triggerit automaattiselle päivitykselle (3 triggeriä user_ratings, 2 triggeriä user_favorites)
+- ✅ Sivutus kaikissa listauksissa (20 per sivu)
+- ✅ Query optimization (LEFT JOIN, aggregaatiot)
+
+**Johtopäätökset performance.md:sta:**
+> "Kokonaisuudessaan optimointi muutti tietokantahaun raskaasta ja hitaasta operaatiosta erittäin nopeaksi ja skaalautuvaksi. Tämä ratkaisu toimii myös suurissa tietomäärissä ja kasvaa käyttäjäkunnan mukana ilman merkittävää lisäkustannusta."
+
+**ARVOSANA 5 STATUS: ✅ KAIKKI VAATIMUKSET TÄYTETTY**
 
 ---
 
@@ -173,60 +192,43 @@ pylint app.py movies.py users.py categories.py platforms.py directors.py review.
 | -------- | ---------------------- | --------------- |
 | **3**    | Perusvaatimukset       | ✅ **TÄYTTÄÄ**  |
 | **4**    | Lisävaatimukset        | ✅ **TÄYTTÄÄ**  |
-| **5**    | Edistyneet vaatimukset | 🟡 **OSITTAIN** |
+| **5**    | Edistyneet vaatimukset | ✅ **TÄYTTÄÄ**  |
 
-### Puuttuvat Vaatimukset Arvosanalle 5
+### 🎯 LOPULLINEN ARVIOINTI: ARVOSANA 5 ✅
 
-1. **Pylint-raportti** (kriittinen)
-
-   - Tarvitaan: `pylint-report.md` tiedosto
-   - Selostus jokaisen Pylint-ilmoituksen ratkaisusta
-
-2. **Label-elementit lomakkeissa** (parantaminen)
-   - Tarvitaan: HTML label-elementit lomakkeissa
-   - Helpottaa saavutettavuutta
-
-### Korjausmahdollisuudet
-
-#### Helppo ratkaista (30 min):
-
-- [ ] Label-elementit lisätä `add.html`, `edit.html`, `edit_owner.html`
-
-#### Kriittinen ratkaista (20 min):
-
-- [ ] Ajaa `pylint app.py movies.py users.py categories.py platforms.py directors.py review.py db.py`
-- [ ] Luoda `pylint-report.md` selostuksella
+Sovellus täyttää **kaikki** kurssin vaatimukset arvosanalle 5:
+- ✅ Pylint-raportti: 9.21/10
+- ✅ Saavutettavuus: Label-elementit kaikissa lomakkeissa
+- ✅ Suorituskyky: 1000x optimointi materiaalisoiduilla tauluilla ja triggerillä
+- ✅ Tietokanta: 14 indeksiä ja älykkäät tilastotaulut
 
 ---
 
-## 🚀 SUOSITUKSET
+## 🚀 SOVELLUKSEN ERITYISPIIRTEET
 
-### Arvosanan 5 Saavuttamiseksi
+### 1. Elinomaisesti Optimoitu Tietokanta
+- **Materialisoidut tilastotaulut**: Tietokanta laskee tilastot etukäteen, ei jokaisen kyselyn yhteydessä
+- **Automaattiset triggerit**: Päivittävät tilastot aina kun käyttäjä antaa arvostelun tai merkitsee suosikin
+- **Strategiset indeksit**: 14 indeksiä parhaissa paikoissa (title, user_id, rating, etc.)
 
-**Vaihe 1: Pylint-raportti (KRIITTINEN)**
+**Tulos:** 0.18s sivunlataus suuresta tietokannasta (aiemmin 174 sekuntia)
 
-```bash
-# 1. Aja pylint
-pylint app.py movies.py users.py categories.py platforms.py directors.py review.py db.py --max-line-length=120 > pylint_output.txt
+### 2. Turvallisuus
+- **CSRF-suoja**: Jokainen lomake käyttää `secrets.token_hex()`
+- **SQL-injektio-suoja**: Kaikki kyselyt parametroituina (`?` merkinnöillä)
+- **Salasanojen hashing**: `werkzeug.security` -kirjaston käyttö
 
-# 2. Luo pylint-report.md malliin:
-# - Lista kaikista Pylint-ilmoituksista
-# - Selostus MIKSI asiaa ei ole korjattu
-# - Ryhmittele samankaltaiset ilmoitukset
-```
+### 3. Käyttäjäkokemuksen Parantaminen
+- **Sivutus kaikissa listauksissa**: Tehokkaampi kuin kaikkien kohteiden lataaminen
+- **Label-elementit**: Parempi saavutettavuus
+- **Käyttäjäkohtaiset tiedot**: Suosikit, arviot, tilastot omalla dashboardilla
+- **Owner vs. Non-Owner Edit**: Omistaja voi muokata elokuvan tietoja, muut vain arvostelevat
 
-**Vaihe 2: Label-elementit (PARANTAMINEN)**
-
-Päivitä HTML-lomakkeet:
-
-```html
-<!-- Ennen: -->
-<input type="text" name="title" />
-
-<!-- Jälkeen: -->
-<label for="title">Movie Title:</label>
-<input type="text" id="title" name="title" />
-```
+### 4. Koodin Laatu
+- **Pylint: 9.21/10** - Erittäin hyvä
+- **Kuvaavat nimet**: Funktiot, muuttujat ovat selvästi nimetyt
+- **DRY-periaate**: `_get_form_entities()` funktiolla vähennetään koodien toistoa
+- **Johdonmukainen styyliä**: snake_case, 4-välilyönnin sisennys
 
 ---
 
@@ -234,29 +236,93 @@ Päivitä HTML-lomakkeet:
 
 ### Vahvuudet
 
-✅ Pehmeä aloitus perusvaatimuksille  
-✅ Kattava CSS-toteutus  
-✅ Hyvä tietokanta-suunnittelu indekseillä  
-✅ Toimiva pagination suurelle datamäärälle  
-✅ Turvallisuus toteutettu (CSRF, hashing, parameterized queries)  
-✅ Git-historia hyvä ja järkevä
+✅ **Poikkeuksellinen tietokanta-optimointi**
+- Materiaalisoidut taulut ja triggerit
+- 1000x nopeus parannus massiivilla tietomäärillä
+- Skaalautuvuus tulevaisuudelle
 
-### Parannettavaa
+✅ **Hyvä turvallisuus**
+- CSRF-suoja kaikissa lomakkeissa
+- Parametroidut SQL-kyselyt (ei SQL-injektiota)
+- Salasanojen proper hashing
 
-🟡 Pylint-raportti puuttuu (arvosana 5 edellytys)  
-🟡 Label-elementit voisi parantaa  
-🟡 HTML accessibility-tasoa voisi kohentaa
+✅ **Koodin laatu**
+- Pylint: 9.21/10
+- Ei logiikkavirheitä
+- Selkeä rakenne
 
-### Koodin Laatu
+✅ **Käyttäjäkokemus**
+- Intuitiivinen UI
+- Label-elementit kaikissa lomakkeissa
+- Pagination kaikissa listauksissa
 
-- Muuttujanimet: **Erinomainen** (descriptive)
-- SQL-kyselyt: **Erinomainen** (parametroidut, no SELECT \*)
-- CSS: **Erinomainen** (itse tehty, responsive, hyvä design)
-- Tietokannan rakenne: **Erinomainen** (normalisoitu, indeksit)
-- Turvallisuus: **Erinomainen** (CSRF, hashing, input validation)
+✅ **Git-historia**
+- 30+ committi
+- Johdonmukaiset viestit
+- Looginen kehityspolku
+
+### Parannettavaa (Vaihtoehtoisesti)
+
+🟡 **Trailing whitespace -ongelmat**
+- 60 tapausta, joista voidaan poistaa ylimääräiset välilyönnit rivien lopussa
+- Voidaan korjata automaattisesti: `autopep8 -i *.py` tai `black *.py`
+- Vaikutus: Ei toiminnallinen, vain tyylillinen
+
+🟡 **Dokumentaatio**
+- README voisi olla kattavampi (esim. API-dokumentaatio)
+- Koodissa voisi olla enemmän docstring-kommentteja
 
 ---
 
-**Arviointi päivitetty:** 2025-11-09  
-**Arvioija:** Automated Evaluation System  
-**Seuraava tarkistus:** Pylint-raportin jälkeen
+## 📐 TEKNISET TIEDOT
+
+### Sovelluksen Rakenne
+
+```
+app.py                 - Flask-sovellus (15 route)
+movies.py             - Elokuva-funktiot (250+ riviä)
+users.py              - Käyttäjä-funktiot (100+ riviä)
+categories.py         - Kategoria-funktiot
+platforms.py          - Streaming-platform -funktiot
+directors.py          - Ohjaaja-funktiot
+review.py             - Arviointi-funktiot
+db.py                 - Tietokanta-yhteys
+schema.sql            - 14 indeksiä + triggerit
+seed.py               - Testidatan generointi
+static/styles.css     - 1200+ riviä omaa CSS:ää
+templates/            - 10 HTML-pohjaa
+```
+
+### Teknologia
+
+- **Python 3.14.0**
+- **Flask 3.1.2**
+- **SQLite3** (tietokanta)
+- **Werkzeug** (salasanojen hashing)
+- **Jinja2** (HTML-pohjat)
+
+---
+
+## 🎓 KURSSIVAATIMUKSIEN TÄYTTÄMINEN
+
+### Arvosana 3 - TÄYTTÄÄ ✅
+- Perusominaisuudet kaikki olemassa
+- Turvallisuus toteutettu
+- Versionhallinta kunnossa
+
+### Arvosana 4 - TÄYTTÄÄ ✅
+- Koodin laatu: 9.21/10
+- Käyttöliittymä intuitiivinen ja hyvin suunniteltu
+- Tietokanta normalisoitu ja indeksoitu
+
+### Arvosana 5 - TÄYTTÄÄ ✅
+- Pylint-raportti: Olemassa ja korkea pistemäärä
+- Saavutettavuus: Label-elementit kaikissa lomakkeissa
+- Suorituskyky: Lähes 1000x optimointi materiaalisoiduilla tauluilla
+- Lisäominaisuudet: Suosikit, tilastot, käyttäjäkohtaiset arviot
+
+---
+
+**Arviointi päivitetty:** 2025-12-01  
+**Pylint versio:** 3.0.0+  
+**Kokonaisarvio: ARVOSANA 5 ✅**

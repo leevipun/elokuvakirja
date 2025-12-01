@@ -1,5 +1,6 @@
 import db
 
+
 def get_directors():
     sql = "SELECT id, name FROM directors"
     results = db.query(sql)

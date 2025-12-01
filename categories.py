@@ -1,9 +1,11 @@
 import db
 
+
 def get_categories():
     sql = "SELECT id, name FROM categories"
     results = db.query(sql)
     return results if results else None
+
 
 def add_category(category_name):
     """Lisää uusi kategoria"""

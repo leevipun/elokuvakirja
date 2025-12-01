@@ -1,27 +1,29 @@
 import db
 
+
 def _transform_movie(row, user_id=None):
     """Helper function to transform database row into movie dict"""
     movie_dict = dict(row)
     # Create category object for template compatibility
-    if movie_dict.get('category_name'):
-        movie_dict['category'] = {'name': movie_dict['category_name']}
+    if movie_dict.get("category_name"):
+        movie_dict["category"] = {"name": movie_dict["category_name"]}
     # Create platform object for template compatibility
-    if movie_dict.get('platform_name'):
-        movie_dict['platform'] = {'name': movie_dict['platform_name']}
+    if movie_dict.get("platform_name"):
+        movie_dict["platform"] = {"name": movie_dict["platform_name"]}
     # Add favorite status
-    movie_dict['is_favorite'] = bool(movie_dict.get('user_favorite'))
-    
+    movie_dict["is_favorite"] = bool(movie_dict.get("user_favorite"))
+
     # Use user's own rating if available, otherwise use average rating
-    if movie_dict.get('user_rating'):
-        movie_dict['rating'] = round(float(movie_dict['user_rating']), 1)
-    elif movie_dict.get('average_rating'):
-        movie_dict['rating'] = round(float(movie_dict['average_rating']), 1)
+    if movie_dict.get("user_rating"):
+        movie_dict["rating"] = round(float(movie_dict["user_rating"]), 1)
+    elif movie_dict.get("average_rating"):
+        movie_dict["rating"] = round(float(movie_dict["average_rating"]), 1)
     else:
-        movie_dict['rating'] = None
-    
-    movie_dict['user_watched'] = bool(movie_dict.get('user_watched'))
+        movie_dict["rating"] = None
+
+    movie_dict["user_watched"] = bool(movie_dict.get("user_watched"))
     return movie_dict
+
 
 def get_movies(page=1, per_page=20):
     offset = (page - 1) * per_page
@@ -56,8 +58,9 @@ def get_movies(page=1, per_page=20):
     movies = [_transform_movie(row) for row in results]
     return movies if movies else []
 
+
 def get_movie_by_id(movie_id, user_id=None):
-    """Get a single movie by ID"""    
+    """Get a single movie by ID"""
     if user_id:
         sql = """
             SELECT 
@@ -109,14 +112,15 @@ def get_movie_by_id(movie_id, user_id=None):
 
     movie = dict(results[0])
     # Use average rating for display
-    if movie.get('average_rating'):
-        movie['rating'] = round(float(movie['average_rating']), 1)
-    movie['user_watched'] = bool(movie.get('user_watched'))
-    movie['is_favorite'] = bool(movie.get('user_favorite'))
+    if movie.get("average_rating"):
+        movie["rating"] = round(float(movie["average_rating"]), 1)
+    movie["user_watched"] = bool(movie.get("user_watched"))
+    movie["is_favorite"] = bool(movie.get("user_favorite"))
 
     print(movie)
 
     return movie
+
 
 def get_movies_by_user(user_id, page=1, per_page=20):
     offset = (page - 1) * per_page
@@ -147,6 +151,7 @@ def get_movies_by_user(user_id, page=1, per_page=20):
     movies = [_transform_movie(row) for row in results]
     return movies
 
+
 def get_user_movies_count(user_id):
     """Get total count of movies for a user (owned or rated)"""
     sql = """
@@ -156,7 +161,8 @@ def get_user_movies_count(user_id):
         WHERE m.owner_id = ? OR ur.user_id = ?
     """
     result = db.query(sql, [user_id, user_id, user_id])
-    return result[0]['count'] if result else 0
+    return result[0]["count"] if result else 0
+
 
 def add_movie(user_id, movie):
     if not user_id:
@@ -168,7 +174,7 @@ def add_movie(user_id, movie):
 
     if result:
         # Movie exists, just add user rating
-        movie_id = result[0]['id']
+        movie_id = result[0]["id"]
     else:
         # Insert new movie into the movies table
         sql = """INSERT INTO movies
@@ -189,7 +195,11 @@ def add_movie(user_id, movie):
             movie["year"] if movie["year"] else None,
             movie["duration"] if movie["duration"] else None,
             movie.get("category_id") if movie.get("category_id") else None,
-            movie.get("streaming_platform_id") if movie.get("streaming_platform_id") else None,
+            (
+                movie.get("streaming_platform_id")
+                if movie.get("streaming_platform_id")
+                else None
+            ),
             user_id,
             movie.get("director_id") if movie.get("director_id") else None,
             movie["review"] if movie["review"] else None,
@@ -212,23 +222,26 @@ def add_movie(user_id, movie):
         movie["watch_date"] if movie["watch_date"] else None,
         movie["watched_with"] if movie["watched_with"] else None,
         movie.get("review") if movie.get("review") else None,
-        bool(movie.get("favorite", False))
+        bool(movie.get("favorite", False)),
     )
 
     db.execute(sql_rating, params_rating)
-    
+
     # Sync favorite status with user_favorites table
     is_favorite = bool(movie.get("favorite", False))
     if is_favorite:
         # Add to favorites if not already there
-        sql_add_fav = "INSERT OR IGNORE INTO user_favorites (user_id, movie_id) VALUES (?, ?)"
+        sql_add_fav = (
+            "INSERT OR IGNORE INTO user_favorites (user_id, movie_id) VALUES (?, ?)"
+        )
         db.execute(sql_add_fav, [user_id, movie_id])
     else:
         # Remove from favorites if it was there
         sql_remove_fav = "DELETE FROM user_favorites WHERE user_id = ? AND movie_id = ?"
         db.execute(sql_remove_fav, [user_id, movie_id])
-    
+
     return movie_id
+
 
 def search_movies(user_id=None, filter_options=None, page=1, per_page=20):
     if filter_options is None:
@@ -261,7 +274,7 @@ def search_movies(user_id=None, filter_options=None, page=1, per_page=20):
         "2010s": "m.year BETWEEN 2010 AND 2019",
         "2000s": "m.year BETWEEN 2000 AND 2009",
         "1990s": "m.year BETWEEN 1990 AND 1999",
-        "older": "m.year < 1990"
+        "older": "m.year < 1990",
     }
     if year in year_filters:
         where.append(year_filters[year])
@@ -293,11 +306,13 @@ def search_movies(user_id=None, filter_options=None, page=1, per_page=20):
         "title": "m.title ASC",
         "year": "m.year DESC, m.title ASC",
         "rating": "COALESCE(mrs.average_rating, 0) DESC, m.created_at DESC",
-        "date_added": "m.created_at DESC"
+        "date_added": "m.created_at DESC",
     }
 
     if sort_by == "relevance" and query:
-        order_sql = "CASE WHEN LOWER(m.title) = LOWER(?) THEN 0 ELSE 1 END, m.created_at DESC"
+        order_sql = (
+            "CASE WHEN LOWER(m.title) = LOWER(?) THEN 0 ELSE 1 END, m.created_at DESC"
+        )
         params.insert(0, query)
     else:
         order_sql = order_map.get(sort_by, "m.created_at DESC")
@@ -333,6 +348,7 @@ def search_movies(user_id=None, filter_options=None, page=1, per_page=20):
     results = db.query(sql, params)
     return [_transform_movie(row) for row in results]
 
+
 def get_search_count(filter_options=None):
     """Get total count of search results for accurate pagination"""
     if filter_options is None:
@@ -356,15 +372,15 @@ def get_search_count(filter_options=None):
 
     if year:
         year_mapping = {
-            '2024': "m.year = 2024",
-            '2023': "m.year = 2023",
-            '2022': "m.year = 2022",
-            '2021': "m.year = 2021",
-            '2020': "m.year = 2020",
-            '2010s': "m.year BETWEEN 2010 AND 2019",
-            '2000s': "m.year BETWEEN 2000 AND 2009",
-            '1990s': "m.year BETWEEN 1990 AND 1999",
-            'older': "m.year < 1990"
+            "2024": "m.year = 2024",
+            "2023": "m.year = 2023",
+            "2022": "m.year = 2022",
+            "2021": "m.year = 2021",
+            "2020": "m.year = 2020",
+            "2010s": "m.year BETWEEN 2010 AND 2019",
+            "2000s": "m.year BETWEEN 2000 AND 2009",
+            "1990s": "m.year BETWEEN 1990 AND 1999",
+            "older": "m.year < 1990",
         }
         if year in year_mapping:
             where_clauses.append(year_mapping[year])
@@ -400,7 +416,8 @@ def get_search_count(filter_options=None):
     """
 
     result = db.query(sql, params)
-    return result[0]['count'] if result else 0
+    return result[0]["count"] if result else 0
+
 
 def update_movie_owner(user_id, movie):
     if not user_id:
@@ -422,21 +439,25 @@ def update_movie_owner(user_id, movie):
         movie["year"] if movie["year"] else None,
         movie["duration"] if movie["duration"] else None,
         movie.get("category_id") if movie.get("category_id") else None,
-        movie.get("streaming_platform_id") if movie.get("streaming_platform_id") else None,
+        (
+            movie.get("streaming_platform_id")
+            if movie.get("streaming_platform_id")
+            else None
+        ),
         movie.get("director_id") if movie.get("director_id") else None,
         movie["review"] if movie["review"] else None,
         movie["id"],
-        user_id
+        user_id,
     )
 
     db.execute(sql, params)
-    
+
     # Also update user_ratings if review/rating/favorite provided
     rating_value = movie.get("rating")
     if rating_value:
         if float(rating_value) > 5:
             rating_value = float(rating_value) / 2
-    
+
     sql_rating = """UPDATE user_ratings
                     SET rating = ?,
                         watch_date = ?,
@@ -444,7 +465,7 @@ def update_movie_owner(user_id, movie):
                         review = ?,
                         favorite = ?
                     WHERE user_id = ? AND movie_id = ?"""
-    
+
     params_rating = (
         rating_value if rating_value else None,
         movie["watch_date"] if movie.get("watch_date") else None,
@@ -452,11 +473,12 @@ def update_movie_owner(user_id, movie):
         movie.get("review") if movie.get("review") else None,
         bool(movie.get("favorite", False)),
         user_id,
-        movie["id"]
+        movie["id"],
     )
-    
+
     db.execute(sql_rating, params_rating)
     return movie["id"]
+
 
 def update_movie(user_id, movie):
     if not user_id:
@@ -480,11 +502,12 @@ def update_movie(user_id, movie):
         movie["watched_with"] if movie["watched_with"] else None,
         bool(movie.get("favorite", False)),
         user_id,
-        movie["id"]
+        movie["id"],
     )
 
     db.execute(sql, params)
     return movie["id"]
+
 
 def delete_movie(user_id, movie_id):
     """Delete a user's rating for a movie. If no other users have rated it, delete the movie."""
@@ -500,7 +523,7 @@ def delete_movie(user_id, movie_id):
     if not result:
         return "Movie not found."
 
-    movie_owner_id = result[0]['owner_id']
+    movie_owner_id = result[0]["owner_id"]
 
     # If user is the owner, they can delete it
     if movie_owner_id == user_id:
@@ -513,44 +536,52 @@ def delete_movie(user_id, movie_id):
         db.execute(sql_delete_movie, [movie_id])
     else:
         # Just delete the user's rating
-        sql_delete_rating = "DELETE FROM user_ratings WHERE user_id = ? AND movie_id = ?"
+        sql_delete_rating = (
+            "DELETE FROM user_ratings WHERE user_id = ? AND movie_id = ?"
+        )
         db.execute(sql_delete_rating, [user_id, movie_id])
 
     return movie_id
 
+
 def add_to_favorites(user_id, movie_id):
     if not user_id:
         return "User ID is required"
-    
+
     if not movie_id:
         return "Movie ID is required"
 
     sql = "INSERT OR IGNORE INTO user_favorites (user_id, movie_id) VALUES (?, ?)"
     db.execute(sql, [user_id, movie_id])
+    return "Success"
+
 
 def remove_from_favorites(user_id, movie_id):
     if not user_id:
         return "User ID is required"
-    
+
     if not movie_id:
         return "Movie ID is required"
 
     sql = "DELETE FROM user_favorites where user_id = ? AND movie_id = ?"
     db.execute(sql, [user_id, movie_id])
+    return "Success"
+
 
 def get_favorites(user_id):
     if not user_id:
         return "User ID is required"
-    
+
     sql = """SELECT COUNT(uf.id) as count FROM user_favorites uf WHERE user_id = ?"""
     result = db.query(sql, [user_id])
-    return result[0]['count'] if result else 0
+    return result[0]["count"] if result else 0
+
 
 def get_favorite_movies(user_id, page=1, per_page=20):
     """Get favorite movies for a user with pagination"""
     if not user_id:
         return []
-    
+
     offset = (page - 1) * per_page
     sql = """
         SELECT m.*,
@@ -580,11 +611,12 @@ def get_favorite_movies(user_id, page=1, per_page=20):
     movies = [_transform_movie(row) for row in results]
     return movies
 
+
 def get_favorite_movies_count(user_id):
     """Get total count of favorite movies for a user"""
     if not user_id:
         return 0
-    
+
     sql = """SELECT COUNT(uf.id) as count FROM user_favorites uf WHERE user_id = ?"""
     result = db.query(sql, [user_id])
-    return result[0]['count'] if result else 0
+    return result[0]["count"] if result else 0
