@@ -28,10 +28,19 @@ import review
 
 app = Flask(__name__, static_url_path="/static")
 app.secret_key = os.getenv("SECRET_KEY") or "fallback-secret-key-for-development-only"
+app.config['DEBUG'] = True
 
+
+def check_csrf(request=None):
+    if request.method == "POST":
+        print("Checking CSRF token...")
+        csrf_token = request.form.get("csrf_token")
+        if not csrf_token or csrf_token != session.get("csrf_token"):
+            abort(403, description="Forbidden")
 
 @app.before_request
 def before_request():
+    check_csrf(request)
     g.start_time = time.time()
 
 
@@ -113,11 +122,6 @@ def login():
         get_flashed_messages()
         return render_template("login.html", csrf_token=session.get("csrf_token"))
 
-    # Verify CSRF token
-    csrf_token = request.form.get("csrf_token")
-    if not csrf_token or csrf_token != session.get("csrf_token"):
-        abort(403, description="CSRF validation failed ❌")
-
     username = request.form.get("username", "").strip()
     password = request.form.get("password", "")
 
@@ -148,11 +152,6 @@ def register():
             16
         )  # Generate CSRF token for register page
         return render_template("register.html", csrf_token=session.get("csrf_token"))
-
-    # Verify CSRF token
-    csrf_token = request.form.get("csrf_token")
-    if not csrf_token or csrf_token != session.get("csrf_token"):
-        abort(403, description="CSRF validation failed ❌")
 
     username = request.form.get("username", "").strip()
     password = request.form.get("password", "")
@@ -208,10 +207,6 @@ def add():
             current_year=datetime.now().year,
             csrf_token=session.get("csrf_token"),
         )
-
-    csrf_token = request.form.get("csrf_token")
-    if not csrf_token or csrf_token != session.get("csrf_token"):
-        abort(403, description="CSRF validation failed ❌")
 
     # Handle POST request to add movie
     title = request.form.get("title", "").strip()
@@ -341,11 +336,6 @@ def add_review(movie_id):
             "edit.html", movie=movie, csrf_token=session.get("csrf_token")
         )
 
-    # Verify CSRF token
-    csrf_token = request.form.get("csrf_token")
-    if not csrf_token or csrf_token != session.get("csrf_token"):
-        abort(403, description="CSRF validation failed ❌")
-
     user = users.get_user(session["username"])
 
     movie_data = {
@@ -450,11 +440,6 @@ def edit(movie_id):
             csrf_token=session.get("csrf_token"),
         )
 
-    # Handle POST request to update movie
-    csrf_token = request.form.get("csrf_token")
-    if not csrf_token or csrf_token != session.get("csrf_token"):
-        abort(403, description="CSRF validation failed ❌")
-
     # Get the existing movie
     existing_movie = movies.get_movie_by_id(movie_id, user["id"])
     if not existing_movie:
@@ -556,11 +541,6 @@ def delete(movie_id):
     user = users.get_user(session["username"])
     if not user:
         return redirect("/login")
-
-    # Verify CSRF token
-    csrf_token = request.form.get("csrf_token")
-    if not csrf_token or csrf_token != session.get("csrf_token"):
-        abort(403, description="CSRF validation failed ❌")
 
     # Check if user owns or has rated the movie
     movie = movies.get_movie_by_id(movie_id, user["id"])

@@ -55,7 +55,7 @@
 
         <div class="movies-overview-grid">
             {% for movie in movies %}
-            <button class="movie-overview-card" onclick="window.location.href='/movie/{{ movie.id }}'">
+            <a href="/movie/{{ movie.id }}" class="movie-overview-card">
                 <div class="movie-poster-mini">🎬</div>
 
                 <div class="movie-overview-info">
@@ -100,7 +100,7 @@
                         {% endif %}
                     </div>
                 </div>
-            </div>
+            </a>
             {% endfor %}
         </div>
 
