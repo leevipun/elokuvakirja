@@ -185,8 +185,7 @@ def add_movie(user_id, movie):
                     streaming_platform_id,
                     owner_id,
                     director_id,
-                    review, 
-                    ) 
+                    review) 
                 VALUES 
                     (?, ?, ?, ?, ?, ?, ?, ?)"""
 
@@ -431,7 +430,7 @@ def update_movie_owner(user_id, movie):
                  category_id = ?,
                  streaming_platform_id = ?,
                  director_id = ?,
-                 review = ?,
+                 review = ?
              WHERE id = ? AND owner_id = ?"""
 
     params = (
