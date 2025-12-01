@@ -55,7 +55,7 @@
 
         <div class="movies-overview-grid">
             {% for movie in movies %}
-            <div class="movie-overview-card" onclick="window.location.href='/movie/{{ movie.id }}'">
+            <button class="movie-overview-card" onclick="window.location.href='/movie/{{ movie.id }}'">
                 <div class="movie-poster-mini">🎬</div>
 
                 <div class="movie-overview-info">
