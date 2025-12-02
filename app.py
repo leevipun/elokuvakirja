@@ -205,6 +205,7 @@ def add():
             directors=entities["directors"],
             platforms=entities["platforms"],
             current_year=datetime.now().year,
+            movie_data=None,
             csrf_token=session.get("csrf_token"),
         )
 
@@ -218,6 +219,7 @@ def add():
             categories=entities["categories"],
             directors=entities["directors"],
             platforms=entities["platforms"],
+            movie_data=None,
             current_year=datetime.now().year,
             csrf_token=session.get("csrf_token"),
         )
@@ -274,7 +276,7 @@ def add():
         director_id = int(selected_director)
 
     movie_data = {
-        "title": title,
+        "title": request.form.get("title") or None,
         "year": request.form.get("year") or None,
         "duration": request.form.get("duration") or None,
         "director_id": director_id,
@@ -295,12 +297,37 @@ def add():
     except Exception as e:
         flash(f"Error adding movie: {str(e)}", "error")
         entities = _get_form_entities()
+        
+        # Add entity names to movie_data so template can display them properly
+        if category_id:
+            for cat in entities["categories"]:
+                if cat["id"] == category_id:
+                    movie_data["category_name"] = cat["name"]
+                    movie_data["category_id_only"] = category_id  # Keep ID for selection
+                    break
+        
+        if streaming_platform_id:
+            for platform in entities["platforms"]:
+                if platform["id"] == streaming_platform_id:
+                    movie_data["platform_name"] = platform["name"]
+                    movie_data["platform_id_only"] = streaming_platform_id  # Keep ID for selection
+                    break
+        
+        if director_id:
+            for director in entities["directors"]:
+                if director["id"] == director_id:
+                    movie_data["director_name"] = director["name"]
+                    movie_data["director_id_only"] = director_id  # Keep ID for selection
+                    break
+        
         return render_template(
             "add.html",
             categories=entities["categories"],
             directors=entities["directors"],
             platforms=entities["platforms"],
+            movie_data=movie_data,
             current_year=datetime.now().year,
+            csrf_token=session.get("csrf_token"),
         )
 
 
