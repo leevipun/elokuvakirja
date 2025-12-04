@@ -28,10 +28,19 @@ import review
 
 app = Flask(__name__, static_url_path="/static")
 app.secret_key = os.getenv("SECRET_KEY") or "fallback-secret-key-for-development-only"
+app.config['DEBUG'] = True
 
+
+def check_csrf(request=None):
+    if request.method == "POST":
+        print("Checking CSRF token...")
+        csrf_token = request.form.get("csrf_token")
+        if not csrf_token or csrf_token != session.get("csrf_token"):
+            abort(403, description="Forbidden")
 
 @app.before_request
 def before_request():
+    check_csrf(request)
     g.start_time = time.time()
 
 
@@ -113,11 +122,6 @@ def login():
         get_flashed_messages()
         return render_template("login.html", csrf_token=session.get("csrf_token"))
 
-    # Verify CSRF token
-    csrf_token = request.form.get("csrf_token")
-    if not csrf_token or csrf_token != session.get("csrf_token"):
-        abort(403, description="CSRF validation failed ❌")
-
     username = request.form.get("username", "").strip()
     password = request.form.get("password", "")
 
@@ -148,11 +152,6 @@ def register():
             16
         )  # Generate CSRF token for register page
         return render_template("register.html", csrf_token=session.get("csrf_token"))
-
-    # Verify CSRF token
-    csrf_token = request.form.get("csrf_token")
-    if not csrf_token or csrf_token != session.get("csrf_token"):
-        abort(403, description="CSRF validation failed ❌")
 
     username = request.form.get("username", "").strip()
     password = request.form.get("password", "")
@@ -206,12 +205,9 @@ def add():
             directors=entities["directors"],
             platforms=entities["platforms"],
             current_year=datetime.now().year,
+            movie_data=None,
             csrf_token=session.get("csrf_token"),
         )
-
-    csrf_token = request.form.get("csrf_token")
-    if not csrf_token or csrf_token != session.get("csrf_token"):
-        abort(403, description="CSRF validation failed ❌")
 
     # Handle POST request to add movie
     title = request.form.get("title", "").strip()
@@ -223,6 +219,7 @@ def add():
             categories=entities["categories"],
             directors=entities["directors"],
             platforms=entities["platforms"],
+            movie_data=None,
             current_year=datetime.now().year,
             csrf_token=session.get("csrf_token"),
         )
@@ -279,7 +276,7 @@ def add():
         director_id = int(selected_director)
 
     movie_data = {
-        "title": title,
+        "title": request.form.get("title") or None,
         "year": request.form.get("year") or None,
         "duration": request.form.get("duration") or None,
         "director_id": director_id,
@@ -300,12 +297,37 @@ def add():
     except Exception as e:
         flash(f"Error adding movie: {str(e)}", "error")
         entities = _get_form_entities()
+        
+        # Add entity names to movie_data so template can display them properly
+        if category_id:
+            for cat in entities["categories"]:
+                if cat["id"] == category_id:
+                    movie_data["category_name"] = cat["name"]
+                    movie_data["category_id_only"] = category_id  # Keep ID for selection
+                    break
+        
+        if streaming_platform_id:
+            for platform in entities["platforms"]:
+                if platform["id"] == streaming_platform_id:
+                    movie_data["platform_name"] = platform["name"]
+                    movie_data["platform_id_only"] = streaming_platform_id  # Keep ID for selection
+                    break
+        
+        if director_id:
+            for director in entities["directors"]:
+                if director["id"] == director_id:
+                    movie_data["director_name"] = director["name"]
+                    movie_data["director_id_only"] = director_id  # Keep ID for selection
+                    break
+        
         return render_template(
             "add.html",
             categories=entities["categories"],
             directors=entities["directors"],
             platforms=entities["platforms"],
+            movie_data=movie_data,
             current_year=datetime.now().year,
+            csrf_token=session.get("csrf_token"),
         )
 
 
@@ -340,11 +362,6 @@ def add_review(movie_id):
         return render_template(
             "edit.html", movie=movie, csrf_token=session.get("csrf_token")
         )
-
-    # Verify CSRF token
-    csrf_token = request.form.get("csrf_token")
-    if not csrf_token or csrf_token != session.get("csrf_token"):
-        abort(403, description="CSRF validation failed ❌")
 
     user = users.get_user(session["username"])
 
@@ -450,11 +467,6 @@ def edit(movie_id):
             csrf_token=session.get("csrf_token"),
         )
 
-    # Handle POST request to update movie
-    csrf_token = request.form.get("csrf_token")
-    if not csrf_token or csrf_token != session.get("csrf_token"):
-        abort(403, description="CSRF validation failed ❌")
-
     # Get the existing movie
     existing_movie = movies.get_movie_by_id(movie_id, user["id"])
     if not existing_movie:
@@ -556,11 +568,6 @@ def delete(movie_id):
     user = users.get_user(session["username"])
     if not user:
         return redirect("/login")
-
-    # Verify CSRF token
-    csrf_token = request.form.get("csrf_token")
-    if not csrf_token or csrf_token != session.get("csrf_token"):
-        abort(403, description="CSRF validation failed ❌")
 
     # Check if user owns or has rated the movie
     movie = movies.get_movie_by_id(movie_id, user["id"])
