@@ -64,7 +64,15 @@ def get_movie_by_id(movie_id, user_id=None):
     if user_id:
         sql = """
             SELECT 
-                m.*,
+                m.id,
+                m.title,
+                m.year,
+                m.duration,
+                m.owner_id,
+                m.category_id,
+                m.streaming_platform_id,
+                m.director_id,
+                m.created_at,
                 c.name AS genre,
                 d.name AS director,
                 s.name AS platform,
@@ -92,7 +100,15 @@ def get_movie_by_id(movie_id, user_id=None):
     else:
         sql = """
             SELECT 
-                m.*,
+                m.id,
+                m.title,
+                m.year,
+                m.duration,
+                m.owner_id,
+                m.category_id,
+                m.streaming_platform_id,
+                m.director_id,
+                m.created_at,
                 c.name AS genre,
                 d.name AS director,
                 s.name AS platform,
@@ -125,7 +141,15 @@ def get_movie_by_id(movie_id, user_id=None):
 def get_movies_by_user(user_id, page=1, per_page=20):
     offset = (page - 1) * per_page
     sql = """
-        SELECT m.*,
+        SELECT  m.id,
+                m.title,
+                m.year,
+                m.duration,
+                m.owner_id,
+                m.category_id,
+                m.streaming_platform_id,
+                m.director_id,
+                m.created_at,
                c.name AS category_name,
                d.name AS director_name,
                s.name AS platform_name,
@@ -583,7 +607,15 @@ def get_favorite_movies(user_id, page=1, per_page=20):
 
     offset = (page - 1) * per_page
     sql = """
-        SELECT m.*,
+        SELECT  m.id,
+                m.title,
+                m.year,
+                m.duration,
+                m.owner_id,
+                m.category_id,
+                m.streaming_platform_id,
+                m.director_id,
+                m.created_at,
                c.name AS category_name,
                d.name AS director_name,
                s.name AS platform_name,
